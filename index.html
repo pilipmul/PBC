@@ -42,11 +42,16 @@ button.out { background-color: #dc2626; }
   display: grid;
   grid-template-columns: 2fr 0.8fr 1.5fr;
   gap: 8px;
-  align-items: start;
+  align-items: center;
   margin-bottom: 10px;
 }
-@media (max-width:480px){ .row-3col{grid-template-columns:1fr;} }
 
+/* tetap sejajar di layar kecil, tapi mengecil proporsional */
+@media (max-width: 480px) {
+  .row-3col {
+    grid-template-columns: 1.5fr 0.7fr 1.3fr;
+  }
+}
 /* Tombol hapus baris di dalam kotak keterangan */
 .desc-container {
   position: relative;
@@ -323,3 +328,4 @@ window.onload = loadDropdownData;
 </script>
 </body>
 </html>
+
