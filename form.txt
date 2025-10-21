@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>PBC GOODS ORDER</title> <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; font-family: 'Inter', "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+body { margin: 0; padding: 0; background: #fff; display: flex; justify-content: center; }
+.container { width: 100%; max-width: 480px; padding: 26px 20px; position: relative; }
+h2 { text-align: center; color: #1877f2; margin-bottom: 22px; }
+input, textarea {
+  width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px;
+  font-size: 1rem; background-color: #fafafa;
+}
+input:focus, textarea:focus {
+  outline: none; border-color: #1877f2; background-color: #fff;
+  box-shadow: 0 0 0 2px rgba(24,119,242,0.15);
+}
+textarea { resize: vertical; min-height: 50px; }
+.btn-group { display: flex; gap: 8px; margin-top: 10px; justify-content: center; position: relative; }
+button {
+  flex: 1; padding: 14px; background-color: #1877f2; color: #fff;
+  border: none; border-radius: 8px; font-weight: 700; font-size: 1rem; cursor: pointer;
+}
+button.in { background-color: #16a34a; }
+button.out { background-color: #dc2626; }
+.add-row {
+  background-color: #facc15; color: #000; font-weight: 600;
+  padding: 10px; border-radius: 8px; width: 100%; margin-top: 8px; cursor: pointer;
+}
+.add-row:hover { background-color: #fbbf24; }
+#msg { text-align: center; font-weight: 600; margin-top: 12px; font-size: 0.95rem; color: #16a34a; }
+.autocomplete-list {
+  position: absolute; background: #fff; border: 1px solid #ccc; border-radius: 6px;
+  z-index: 99; max-height: 180px; overflow-y: auto; width: calc(100% - 2px);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+.autocomplete-item { padding: 10px; cursor: pointer; }
+.autocomplete-item:hover, .autocomplete-item.active { background: #1877f2; color: #fff; }
+.row-3col {
+  display: grid;
+  grid-template-columns: 2fr 0.8fr 1.5fr;
+  gap: 8px;
+  align-items: start;
+  margin-bottom: 10px;
+}
+@media (max-width:480px){ .row-3col{grid-template-columns:1fr;} }
+
+/* Tombol hapus baris di dalam kotak keterangan */
+.desc-container {
+  position: relative;
+  width: 100%;
+}
+.desc-container textarea {
+  width: 100%;
+  padding-right: 24px; /* beri ruang untuk tombol X */
+  box-sizing: border-box;
+}
+.delete-row {
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  background: none;
+  border: none;
+  color: #dc2626;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0;
+}
+.delete-row:hover {
+  color: #b91c1c;
+  transform: scale(1.2);
+}
+
+/* Popup toast kecil di bawah tombol */
+.popup-toast {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: -60px;
+  background: #f87171;
+  color: #fff;
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  display: none;
+  z-index: 99;
+  text-align: center;
+  transition: opacity 0.3s ease, bottom 0.3s ease;
+}
+.popup-toast.show {
+  display: block;
+  opacity: 1;
+  bottom: 15px;
+}
+
+/* Popup password kecil */
+.popup-pass-small {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: -10px;
+  z-index: 100;
+  display: none;
+}
+.popup-pass-small .box {
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+  padding: 16px;
+  width: 240px;
+  text-align: center;
+}
+.popup-pass-small h3 {
+  font-size: 1rem;
+  margin-bottom: 8px;
+  color: #1877f2;
+}
+.popup-pass-small input {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  margin-bottom: 10px;
+  text-align: center;
+}
+.popup-pass-small .btns {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+.popup-pass-small .btns button {
+  background: #1877f2;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 14px;
+  cursor: pointer;
+  font-weight: 600;
+}
+.popup-pass-small .btns button:last-child {
+  background: #999;
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+  <h2>PBC GOODS ORDER</h2>
+  <form id="myForm">
+    <div style="position: relative; margin-bottom: 16px;">
+      <input type="text" id="name" placeholder="Ketik nama..." autocomplete="off" required>
+      <div id="nameList" class="autocomplete-list" style="display:none;"></div>
+    </div>
+
+    <div id="itemContainer">
+      <div class="row-3col item-row">
+        <div style="position: relative;">
+          <input type="text" class="item" placeholder="Item..." autocomplete="off" required>
+          <div class="autocomplete-list" style="display:none;"></div>
+        </div>
+        <input type="number" class="qty" min="1" placeholder="Qty" required>
+        <div class="desc-container">
+          <textarea class="desc" placeholder="Keterangan..."></textarea>
+          <button type="button" class="delete-row">×</button>
+        </div>
+      </div>
+    </div>
+
+    <button type="button" class="add-row" id="addRow">+ Tambah Baris</button>
+
+    <div class="btn-group">
+      <button type="button" class="in" id="btnIn">IN</button>
+      <button type="button" class="out" id="btnOut">OUT</button>
+      <div id="popupToast" class="popup-toast"></div>
+      <div id="popupPassSmall" class="popup-pass-small">
+        <div class="box">
+          <h3>Masukkan Password</h3>
+          <input type="password" id="adminPass" placeholder="Password">
+          <div class="btns">
+            <button type="button" onclick="checkPassword()">OK</button>
+            <button type="button" onclick="closePassPopup()">Batal</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="msg"></div>
+  </form>
+</div>
+
+<script>
+const maxRows = 5;
+let nameData = [], itemData = [], itemStock = {};
+
+function loadDropdownData() {
+  google.script.run.withSuccessHandler(data => {
+    ({ names: nameData, items: itemData } = data);
+    initAutocomplete();
+  }).getDropdownData();
+}
+
+function initAutocomplete() {
+  const nameInput = document.getElementById("name");
+  const nameBox = document.getElementById("nameList");
+  setupAutocomplete(nameInput, nameBox, nameData);
+  document.querySelectorAll(".item").forEach(input => {
+    const box = input.parentNode.querySelector(".autocomplete-list");
+    setupAutocomplete(input, box, itemData, true);
+  });
+}
+
+function setupAutocomplete(input, box, data, isItem=false) {
+  input.addEventListener("input", () => {
+    const val = input.value.trim().toLowerCase();
+    if (!val) return box.style.display = "none";
+    const match = data.filter(d => d.toLowerCase().includes(val)).slice(0, 15);
+    if (!match.length) return box.style.display = "none";
+    box.innerHTML = "";
+    match.forEach(txt => {
+      const div = document.createElement("div");
+      div.textContent = txt;
+      div.className = "autocomplete-item";
+      div.onclick = () => { input.value = txt; box.style.display = "none"; if (isItem) fetchStock(txt); };
+      box.appendChild(div);
+    });
+    box.style.display = "block";
+  });
+  document.addEventListener("click", e => { if (!e.target.classList.contains("autocomplete-item")) box.style.display = "none"; });
+}
+
+function fetchStock(item) {
+  if (itemStock[item] !== undefined) return;
+  google.script.run.withSuccessHandler(stock => itemStock[item] = stock).getStockForItem(item);
+}
+
+function formatDate(d) {
+  const m = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  return `${String(d.getDate()).padStart(2,"0")} ${m[d.getMonth()]} ${String(d.getFullYear()).slice(-2)}`;
+}
+
+function showMsg(text, isError, color) {
+  const msg = document.getElementById("msg");
+  msg.textContent = text;
+  msg.style.color = color || (isError ? "#dc2626" : "#16a34a");
+}
+
+function showToast(msg, color="#f87171") {
+  const toast = document.getElementById("popupToast");
+  toast.textContent = msg;
+  toast.style.background = color;
+  toast.classList.add("show");
+  setTimeout(() => toast.classList.remove("show"), 2500);
+}
+
+function openPassPopup() {
+  document.getElementById("popupPassSmall").style.display = "block";
+}
+function closePassPopup() {
+  document.getElementById("popupPassSmall").style.display = "none";
+  document.getElementById("adminPass").value = "";
+}
+function checkPassword(event) {
+  if (event) event.preventDefault();
+  const pass = document.getElementById("adminPass").value.trim();
+  if (pass === "admin123") { closePassPopup(); handleSubmit("in"); }
+  else { closePassPopup(); showToast("❌ Password salah!"); }
+}
+
+document.getElementById("addRow").addEventListener("click", () => {
+  const container = document.getElementById("itemContainer");
+  if (container.querySelectorAll(".item-row").length >= maxRows) return showMsg("⚠️ Maksimal 5 baris item.", true);
+  const clone = container.querySelector(".item-row").cloneNode(true);
+  clone.querySelectorAll("input, textarea").forEach(el => el.value = "");
+  container.appendChild(clone);
+  initAutocomplete();
+  updateDeleteButtons();
+});
+
+function updateDeleteButtons() {
+  document.querySelectorAll(".item-row").forEach((row, i) => {
+    const btn = row.querySelector(".delete-row");
+    if (btn) btn.style.display = (i === 0) ? "none" : "block";
+  });
+}
+updateDeleteButtons();
+
+document.addEventListener("click", e => {
+  if (e.target.classList.contains("delete-row")) {
+    const rows = document.querySelectorAll(".item-row");
+    if (rows.length > 1) e.target.closest(".item-row").remove();
+    else showMsg("⚠️ Minimal 1 baris harus ada.", true);
+    updateDeleteButtons();
+  }
+});
+
+function handleSubmit(mode) {
+  const name = document.getElementById("name").value.trim();
+  if (!nameData.includes(name)) return showMsg("⚠️ Nama tidak valid!", true);
+  const items = [...document.querySelectorAll(".item-row")].map(row => ({
+    item: row.querySelector(".item").value.trim(),
+    qty: +row.querySelector(".qty").value,
+    desc: row.querySelector(".desc").value.trim()
+  })).filter(r => r.item && r.qty);
+  if (!items.length) return showMsg("⚠️ Isi minimal 1 item.", true);
+  if (mode==="out") for (const r of items) if ((itemStock[r.item]||0) < r.qty) return showToast("⚠️ Out of Stock");
+  showMsg("⏳ Mengirim data...", false, "#555");
+  google.script.run.withSuccessHandler(res=>{
+    showMsg(res,res.startsWith("❌"));
+    if(res.startsWith("✅")) document.getElementById("myForm").reset();
+  }).submitForm({name,items,date:formatDate(new Date()),mode});
+}
+
+document.getElementById("btnIn").addEventListener("click", openPassPopup);
+document.getElementById("btnOut").addEventListener("click", () => handleSubmit("out"));
+
+window.onload = loadDropdownData;
+</script>
+</body>
+</html>
