@@ -204,10 +204,13 @@ const maxRows = 5;
 let nameData = [], itemData = [], itemStock = {};
 
 function loadDropdownData() {
-  google.script.run.withSuccessHandler(data => {
+ fetch("https://script.google.com/macros/s/AKfycbwwchLjFj59UteUuMH_PVsZjcYvOupD0a4aZUQaQ-VkPu6i-DNou_K5bFgMlFYggwLR/exec?action=getDropdownData")
+  .then(res => res.json())
+  .then(data => {
     ({ names: nameData, items: itemData } = data);
     initAutocomplete();
-  }).getDropdownData();
+  })
+  .catch(err => console.error("Gagal ambil data:", err));
 }
 
 function initAutocomplete() {
@@ -315,10 +318,14 @@ function handleSubmit(mode) {
   if (!items.length) return showMsg("⚠️ Isi minimal 1 item.", true);
   if (mode==="out") for (const r of items) if ((itemStock[r.item]||0) < r.qty) return showToast("⚠️ Out of Stock");
   showMsg("⏳ Mengirim data...", false, "#555");
-  google.script.run.withSuccessHandler(res=>{
-    showMsg(res,res.startsWith("❌"));
-    if(res.startsWith("✅")) document.getElementById("myForm").reset();
-  }).submitForm({name,items,date:formatDate(new Date()),mode});
+  fetch("https://script.google.com/macros/s/AKfycbwwchLjFj59UteUuMH_PVsZjcYvOupD0a4aZUQaQ-VkPu6i-DNou_K5bFgMlFYggwLR/exec?action=submitForm", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify(formData)
+})
+.then(res => res.text())
+.then(res => showMsg(res, res.startsWith("❌")))
+.catch(err => showMsg("⚠️ Gagal kirim data!", true));
 }
 
 document.getElementById("btnIn").addEventListener("click", openPassPopup);
@@ -328,4 +335,5 @@ window.onload = loadDropdownData;
 </script>
 </body>
 </html>
+
 
