@@ -3,135 +3,158 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
-  <title>Data Barang</title>
+  <title>Form Barang Keluar</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
   <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: 'Inter', sans-serif;
-    }
-
+    * { box‐sizing: border‐box; font‐family: 'Inter', sans‐serif; }
     body {
       background: #f4f6f8;
       color: #333;
       display: flex;
-      flex-direction: column;
-      align-items: center;
-      min-height: 100vh;
-      padding: 10px;
+      flex‐direction: column;
+      align‐items: center;
+      min‐height: 100vh;
+      padding: 20px;
     }
-
     h1 {
-      font-size: 1.3rem;
-      font-weight: 600;
-      margin: 15px 0;
-      color: #222;
-      text-align: center;
+      font‐size: 1.2rem;
+      margin‐bottom: 20px;
+      text‐align: center;
     }
-
-    .table-container {
+    form {
       width: 100%;
-      max-width: 600px;
+      max‐width: 400px;
       background: #fff;
-      border-radius: 12px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      overflow: hidden;
+      padding: 20px;
+      border‐radius: 12px;
+      box‐shadow: 0 3px 8px rgba(0,0,0,0.1);
     }
-
-    table {
+    label {
+      font‐weight: 600;
+      display: block;
+      margin‐bottom: 6px;
+    }
+    input, textarea {
       width: 100%;
-      border-collapse: collapse;
-    }
-
-    thead {
-      background: #007bff;
-      color: #fff;
-    }
-
-    th, td {
-      text-align: left;
-      padding: 10px 12px;
+      padding: 10px;
+      margin‐bottom: 15px;
+      border: 1px solid #ccc;
+      border‐radius: 8px;
       font-size: 0.95rem;
     }
-
-    tr:nth-child(even) {
-      background: #f9f9f9;
+    input:focus, textarea:focus {
+      outline: none;
+      border‐color: #007bff;
+      box‐shadow: 0 0 3px rgba(0,123,255,0.3);
     }
-
-    @media (max-width: 600px) {
-      th, td {
-        padding: 8px;
-        font-size: 0.85rem;
-      }
-
-      h1 {
-        font-size: 1.1rem;
-      }
-
-      .table-container {
-        border-radius: 8px;
-      }
+    button {
+      width: 100%;
+      padding: 10px;
+      background: #007bff;
+      color: white;
+      border: none;
+      border‐radius: 8px;
+      font‐weight: 600;
+      font‐size: 1rem;
+      cursor: pointer;
     }
-
-    .loading {
-      text-align: center;
-      padding: 20px;
-      color: #555;
+    button:active { background: #0056b3; }
+    .message {
+      text‐align: center;
+      margin‐top: 10px;
+      font‐size: 0.9rem;
     }
   </style>
 </head>
 <body>
 
-  <h1>📦 Daftar Barang</h1>
+  <h1>📦 Form Barang Keluar</h1>
 
-  <div class="table-container">
-    <table id="dataTable">
-      <thead>
-        <tr>
-          <th>Nama</th>
-          <th>Item</th>
-          <th>Qty</th>
-        </tr>
-      </thead>
-      <tbody id="tableBody">
-        <tr><td colspan="3" class="loading">Memuat data...</td></tr>
-      </tbody>
-    </table>
-  </div>
+  <form id="barangForm">
+    <!-- Nama -->
+    <label for="nama">Nama</label>
+    <input list="namaList" id="nama" name="nama" placeholder="Ketik nama..." required>
+    <datalist id="namaList"></datalist>
+
+    <!-- Item -->
+    <label for="item">Item</label>
+    <input list="itemList" id="item" name="item" placeholder="Ketik nama barang..." required>
+    <datalist id="itemList"></datalist>
+
+    <!-- Qty -->
+    <label for="qty">Qty</label>
+    <input type="number" id="qty" name="qty" min="1" placeholder="Masukkan jumlah" required>
+
+    <!-- Keterangan -->
+    <label for="desc">Keterangan</label>
+    <textarea id="desc" name="desc" rows="3" placeholder="Masukkan keterangan..."></textarea>
+
+    <button type="submit">OUT</button>
+    <div class="message" id="msg"></div>
+  </form>
 
   <script>
-    async function loadData() {
-      const url = "https://api.sheetbest.com/sheets/498acd7a-ed95-4b05-8700-de1d79567933";
-      const tbody = document.getElementById("tableBody");
+    const apiEmployee = "https://api.sheetbest.com/sheets/498acd7a-ed95-4b05-8700-de1d79567933?sheet=Employee";
+    const apiSummary  = "https://api.sheetbest.com/sheets/498acd7a-ed95-4b05-8700-de1d79567933?sheet=Summary";
+    const apiLog      = "https://api.sheetbest.com/sheets/498acd7a-ed95-4b05-8700-de1d79567933?sheet=Log";
 
+    async function loadSuggestions() {
       try {
-        const res = await fetch(url);
-        const data = await res.json();
-        tbody.innerHTML = "";
+        const resEmp = await fetch(apiEmployee);
+        const dataEmp = await resEmp.json();
+        const namaList = [...new Set(dataEmp.map(r => r["B"] || r["Nama"] || Object.values(r)[1]).filter(Boolean))];
+        document.getElementById("namaList").innerHTML = namaList
+          .map(n => `<option value="${n}">`)
+          .join("");
 
-        if (data.length === 0) {
-          tbody.innerHTML = "<tr><td colspan='3' style='text-align:center;'>Tidak ada data</td></tr>";
-          return;
-        }
-
-        data.forEach(row => {
-          const tr = document.createElement("tr");
-          tr.innerHTML = `
-            <td>${row.Nama || '-'}</td>
-            <td>${row.Item || '-'}</td>
-            <td>${row.Qty || '-'}</td>
-          `;
-          tbody.appendChild(tr);
-        });
-      } catch (error) {
-        tbody.innerHTML = "<tr><td colspan='3' style='color:red; text-align:center;'>Gagal memuat data</td></tr>";
-        console.error("Error:", error);
+        const resSum = await fetch(apiSummary);
+        const dataSum = await resSum.json();
+        const itemList = [...new Set(dataSum.map(r => r["B"] || r["Goods Description"] || Object.values(r)[1]).filter(Boolean))];
+        document.getElementById("itemList").innerHTML = itemList
+          .map(i => `<option value="${i}">`)
+          .join("");
+      } catch (err) {
+        console.error("Gagal ambil data suggestion:", err);
       }
     }
 
-    loadData();
+    loadSuggestions();
+
+    document.getElementById("barangForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const msg = document.getElementById("msg");
+      msg.style.color = "#555";
+      msg.textContent = "Mengirim data...";
+
+      const data = {
+        Nama: document.getElementById("nama").value.trim(),
+        Item: document.getElementById("item").value.trim(),
+        Out: parseInt(document.getElementById("qty").value),
+        Desc: document.getElementById("desc").value.trim(),
+        Date: new Date().toLocaleString("id-ID")
+      };
+
+      try {
+        const res = await fetch(apiLog, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data)
+        });
+
+        if (res.ok) {
+          msg.style.color = "green";
+          msg.textContent = "✅ Data berhasil dikirim!";
+          e.target.reset();
+        } else {
+          msg.style.color = "red";
+          msg.textContent = "❌ Gagal mengirim data!";
+        }
+      } catch (err) {
+        console.error(err);
+        msg.style.color = "red";
+        msg.textContent = "❌ Terjadi kesalahan jaringan.";
+      }
+    });
   </script>
 
 </body>
