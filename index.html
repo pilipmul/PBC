@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <title>Form Barang Keluar</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
   <style>
     * { box-sizing: border-box; font-family: 'Inter', sans-serif; }
     body {
@@ -73,17 +73,17 @@
   <form id="barangForm">
     <!-- Nama -->
     <label for="nama">Nama</label>
-    <input list="namaList" id="nama" name="nama" placeholder="Ketik nama..." required>
+    <input list="namaList" id="nama" name="nama" placeholder="Ketik nama..." required />
     <datalist id="namaList"></datalist>
 
     <!-- Item -->
     <label for="item">Item</label>
-    <input list="itemList" id="item" name="item" placeholder="Ketik nama barang..." required>
+    <input list="itemList" id="item" name="item" placeholder="Ketik nama barang..." required />
     <datalist id="itemList"></datalist>
 
     <!-- Qty -->
     <label for="qty">Qty</label>
-    <input type="number" id="qty" name="qty" min="1" placeholder="Masukkan jumlah" required>
+    <input type="number" id="qty" name="qty" min="1" placeholder="Masukkan jumlah" required />
 
     <!-- Keterangan -->
     <label for="desc">Keterangan</label>
@@ -94,12 +94,12 @@
   </form>
 
   <script>
-    // === Endpoint API SheetBest ===
+    // === API endpoint terbaru ===
     const apiEmployee = "https://api.sheetbest.com/sheets/1f88845f-9fb6-48c2-91dd-591588d57ab5?sheet=Employee";
     const apiSummary  = "https://api.sheetbest.com/sheets/1f88845f-9fb6-48c2-91dd-591588d57ab5?sheet=Summary";
     const apiLog      = "https://api.sheetbest.com/sheets/1f88845f-9fb6-48c2-91dd-591588d57ab5?sheet=Log";
 
-    // --- Ambil data untuk suggestion ---
+    // --- Ambil data nama & item untuk suggestion ---
     async function loadSuggestions() {
       try {
         // Ambil nama dari sheet Employee
@@ -112,7 +112,7 @@
           .map(n => `<option value="${n}">`)
           .join("");
 
-        // Ambil item dari sheet Summary (kolom Goods Description)
+        // Ambil item dari sheet Summary
         const resSum = await fetch(apiSummary);
         const dataSum = await resSum.json();
         const itemList = [...new Set(
@@ -122,25 +122,32 @@
           .map(i => `<option value="${i}">`)
           .join("");
       } catch (err) {
-        console.error("Gagal ambil data suggestion:", err);
+        console.error("Gagal ambil data:", err);
       }
     }
 
     loadSuggestions();
 
-    // --- Kirim data ke Google Sheet ---
+    // --- Kirim data ke Google Sheet (Log) ---
     document.getElementById("barangForm").addEventListener("submit", async (e) => {
       e.preventDefault();
       const msg = document.getElementById("msg");
       msg.style.color = "#555";
       msg.textContent = "Mengirim data...";
 
+      const now = new Date();
+
+      // Data sesuai urutan kolom di sheet Log
       const data = {
         Nama: document.getElementById("nama").value.trim(),
         Item: document.getElementById("item").value.trim(),
+        In: "",
         Out: parseInt(document.getElementById("qty").value),
-        Desc: document.getElementById("desc").value.trim(),
-        Date: new Date().toLocaleString("id-ID")
+        Date: now.toLocaleString("id-ID"),
+        "Desc.": document.getElementById("desc").value.trim(),
+        "Trx Code": "",  // dikosongkan sesuai permintaan
+        Stock: "",
+        Project: ""
       };
 
       try {
