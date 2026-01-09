@@ -43,7 +43,10 @@
         
         .header-actions { position: absolute; top: 10px; left: 20px; display: flex; gap: 8px; z-index: 10; }
         
-        /* KOTAK LAST 5 TRX - PUTIH SOLID */
+        /* ANIMASI RELOAD BERPUTAR */
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .spinning { animation: spin 1s linear infinite; }
+
         #historyPopup { 
             position: absolute; top: 40px; left: 20px; 
             background-color: #ffffff !important; 
@@ -54,14 +57,13 @@
         }
 
         .loader { display: none; border: 4px solid #f3f3f3; border-top: 4px solid #1877f2; border-radius: 50%; width: 36px; height: 36px; animation: spin 0.8s linear infinite; margin: 20px auto; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
 <div class="container">
     <div class="header-actions">
         <button id="refreshBtn" type="button" onclick="fetchDataAndUpdateUI(false)" style="background:none; width:auto; padding:0;">
-            <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#1877f2"><path d="M480-160q-134 0-227-93t-93-227q0-134 93-227t227-93q69 0 132 28.5T720-690v-110h80v280H520v-80h168q-32-56-87.5-88T480-720q-100 0-170 70t-70 170q0 100 70 170t170 70q77 0 139-44t87-116h84q-28 106-114 173t-196 67Z"/></svg>
+            <svg id="refreshIcon" xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#1877f2"><path d="M480-160q-134 0-227-93t-93-227q0-134 93-227t227-93q69 0 132 28.5T720-690v-110h80v280H520v-80h168q-32-56-87.5-88T480-720q-100 0-170 70t-70 170q0 100 70 170t170 70q77 0 139-44t87-116h84q-28 106-114 173t-196 67Z"/></svg>
         </button>
         <button id="historyBtn" type="button" onclick="toggleHistoryPopup()" style="display:none; background:none; color:#1877f2; width:auto; font-weight:bold;">~5</button>
     </div>
@@ -112,21 +114,21 @@
 <div id="passPopup" class="popup-overlay"><div class="popup-box"><h3>Password</h3><input type="password" id="adminPass" style="border:1px solid #ccc; margin-bottom:15px;"><div class="btn-group"><button onclick="checkPassword()">OK</button><button onclick="closePassPopup()" style="background:#595959;">Batal</button></div></div></div>
 
 <script>
-    // GANTI URL DI BAWAH INI
     const scriptURL = 'https://script.google.com/macros/s/AKfycbwgPshFWH1uquWsPdR2Gp-V29e5FwiL5ZIJBj2eixI4vOaWrWRIC_9xZ-wRObcgmn-39g/exec';
-    
     let nameData = [], itemData = [], itemStock = {}, lastTransactions = [], gaMode = false, activeTextarea = null, longPressTimer;
 
     async function fetchDataAndUpdateUI(isInitialLoad = true) {
-        const refreshBtn = document.getElementById("refreshBtn");
-        refreshBtn.style.opacity = "0.5";
+        const icon = document.getElementById("refreshIcon");
+        icon.classList.add("spinning"); // MULAI BERPUTAR
         try {
             const resp = await fetch(`${scriptURL}?action=getDropdownData`);
             const data = await resp.json();
             nameData = data.names; itemData = data.items; itemStock = data.stocks; lastTransactions = data.transactions || [];
             if (isInitialLoad) initAutocomplete();
         } catch (e) { showToast("❌ Gagal Sinkronisasi!"); }
-        finally { refreshBtn.style.opacity = "1"; }
+        finally { 
+            setTimeout(() => icon.classList.remove("spinning"), 500); // BERHENTI BERPUTAR
+        }
     }
 
     function initAutocomplete() {
@@ -156,7 +158,7 @@
 
     async function handleSubmit(mode) {
         const name = document.getElementById("name").value.trim();
-        if (!nameData.includes(name)) return showToast("⚠️ Pilih Nama!");
+        if (!nameData.includes(name)) return showToast("⚠️ Pilih Nama yang valid!");
         const items = [...document.querySelectorAll(".item-row")].map(row => ({
             item: row.querySelector(".item").value.trim(),
             qty: parseInt(row.querySelector(".qty").value),
@@ -177,7 +179,6 @@
         finally { document.getElementById("loader").style.display = "none"; }
     }
 
-    // CLICK OUTSIDE TO CLOSE
     document.addEventListener("click", function(e) {
         const p = document.getElementById("historyPopup");
         const b = document.getElementById("historyBtn");
@@ -185,7 +186,6 @@
         if (!e.target.closest('.item') && !e.target.closest('.name')) document.querySelectorAll('.autocomplete-list').forEach(l => l.style.display = 'none');
     });
 
-    // LONG PRESS & TOAST
     document.addEventListener("mousedown", startPress); document.addEventListener("touchstart", startPress);
     document.addEventListener("mouseup", cancelPress); document.addEventListener("touchend", cancelPress);
     function startPress(e) { if (e.target.classList.contains("desc")) { activeTextarea = e.target; longPressTimer = setTimeout(() => { document.getElementById("descPopupInput").value = activeTextarea.value; document.getElementById("descPopup").style.display = "flex"; }, 600); } }
@@ -209,7 +209,6 @@
     function checkPassword() { if (document.getElementById("adminPass").value === "admin123") { document.getElementById("passPopup").style.display = "none"; document.getElementById("adminPass").value = ""; handleSubmit("in"); } else showToast("❌ Salah!"); }
     function closePassPopup() { document.getElementById("passPopup").style.display = "none"; }
 
-    // CONTROLS
     document.getElementById("addRow").onclick = () => {
         const container = document.getElementById("itemContainer");
         if (container.children.length >= 5) return showToast("⚠️ Maksimal 5");
@@ -222,7 +221,6 @@
     document.getElementById("titleBtn").onclick = () => { gaMode = !gaMode; showToast(gaMode ? "GA Mode ON" : "GA Mode OFF"); document.getElementById("historyBtn").style.display = gaMode ? "block" : "none"; };
     document.getElementById("btnIn").onclick = () => document.getElementById("passPopup").style.display = "flex";
     document.getElementById("btnOut").onclick = () => handleSubmit("out");
-    
     window.onload = () => fetchDataAndUpdateUI(true);
 </script>
 </body>
