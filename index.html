@@ -166,7 +166,7 @@
 
 <div id="passPopup" class="popup-overlay">
     <div class="popup-box" style="width:92%;">
-        <input type="password" id="adminPass" placeholder="Password" style="border:1px solid #1877f2; margin-bottom:15px; border-radius:12px; height:50px;">
+        <input type="password" id="adminPass" placeholder="Admin Password" style="border:1px solid #1877f2; margin-bottom:15px; border-radius:12px; height:50px;">
         <div class="btn-group" style="gap:15px;">
             <button class="modal-btn" onclick="checkPassword()">OK</button>
             <button class="modal-btn" onclick="closePassPopup()" style="background:#595959;">Batal</button>
@@ -176,33 +176,16 @@
 
 <script>
     const scriptURL = 'https://script.google.com/macros/s/AKfycbwgPshFWH1uquWsPdR2Gp-V29e5FwiL5ZIJBj2eixI4vOaWrWRIC_9xZ-wRObcgmn-39g/exec';
-    
-    // 1. TANGKAP DATA YANG DISUNTIKKAN DARI SERVER
-    // Data ini akan langsung ada tanpa menunggu proses fetch lagi
-    const serverData = <?!= initialData ?>; 
+    let nameData = [], itemData = [], itemStock = {}, lastTransactions = [], gaMode = false, activeTextarea = null, longPressTimer;
 
-    let nameData = serverData.names || [];
-    let itemData = serverData.items || [];
-    let itemStock = serverData.stocks || {};
-    let lastTransactions = serverData.transactions || [];
-    
-    let gaMode = false, activeTextarea = null, longPressTimer;
-
-    // 2. UBAH FUNGSI FETCH AGAR TIDAK BERJALAN DI AWAL (Hanya untuk Refresh)
     async function fetchDataAndUpdateUI(isInitialLoad = true) {
-        // Jika pemanggilan awal, kita tidak perlu fetch lagi karena sudah ada di 'serverData'
-        if (isInitialLoad) {
-            initAutocomplete();
-            return;
-        }
-
         const icon = document.getElementById("refreshIcon");
         icon.classList.add("spinning");
         try {
             const resp = await fetch(`${scriptURL}?action=getDropdownData`);
             const data = await resp.json();
             nameData = data.names; itemData = data.items; itemStock = data.stocks; lastTransactions = data.transactions || [];
-            initAutocomplete();
+            if (isInitialLoad) initAutocomplete();
         } catch (e) { showToast("❌ Gagal Sinkronisasi!"); }
         finally { setTimeout(() => icon.classList.remove("spinning"), 600); }
     }
