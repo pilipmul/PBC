@@ -4,46 +4,78 @@
     <meta charset="UTF-8">
     <title>PBC SyncFlow</title> 
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
     <link rel="icon" type="image/png" href="https://raw.githubusercontent.com/pilipmul/PBC-cek-Piutang/main/logo%20citanusa.png">
+    
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Montserrat:wght@700&display=swap" rel="stylesheet">
     
     <style>
+        /* --- STYLE DASAR --- */
         * { box-sizing: border-box; font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
-        body { margin: 0; padding: 0; background: url('https://raw.githubusercontent.com/pilipmul/PBC-cek-Piutang/6d34302da336e6b94b116bff0ce07084c5f95c3e/BG2.jpg') no-repeat center center fixed; background-size: cover; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; padding-top: 20px; }
+        body { 
+            margin: 0; padding: 0; 
+            background: url('https://raw.githubusercontent.com/pilipmul/PBC-cek-Piutang/6d34302da336e6b94b116bff0ce07084c5f95c3e/BG2.jpg') no-repeat center center fixed; 
+            background-size: cover; display: flex; justify-content: center; align-items: flex-start; 
+            min-height: 100vh; padding-top: 20px; 
+        }
         
-        .container { width: 100%; max-width: 480px; background: #ffffff; padding: 20px 22px 28px 22px; border-radius: 16px; border: 2px solid #1877f2; box-shadow: 0 10px 30px rgba(0,0,0,0.2); position: relative; text-align: center; }
+        .container { 
+            width: 100%; max-width: 480px; background: #ffffff; padding: 20px 22px 28px 22px; 
+            border-radius: 16px; border: 2px solid #1877f2; box-shadow: 0 10px 30px rgba(0,0,0,0.2); 
+            position: relative; text-align: center; 
+        }
         
-        #nameWrapper { position: relative; margin-bottom: 0; padding-top: 7px; border-top: 1px solid #1877f2; padding-bottom: 7px; border-bottom: 1px solid #1877f2; }
+        #nameWrapper { position: relative; padding-top: 7px; border-top: 1px solid #1877f2; padding-bottom: 7px; border-bottom: 1px solid #1877f2; }
         
         input, textarea { width: 100%; padding: 10px; border: none; font-size: 1rem; background-color: transparent; text-align: center; }
         input:focus, textarea:focus { outline: none; }
         input.qty { border-left: 1px solid #1877f2; border-right: 1px solid #1877f2; }
         textarea { resize: none; height: 40px !important; overflow-y: hidden; }
 
-        /* Posisi Kolom Persis Script Awal */
-        .row-3col { display: grid; grid-template-columns: 40% 20% 36%; gap: 8px; align-items: start; margin-bottom: 10px; border-bottom: 1px solid #1877f2; padding-bottom: 10px; padding-top: 5px; position: relative; }
+        /* Proporsi Kolom Sesuai Script Awal */
+        .row-3col { 
+            display: grid; grid-template-columns: 40% 20% 36%; gap: 8px; 
+            align-items: start; margin-bottom: 10px; border-bottom: 1px solid #1877f2; 
+            padding-bottom: 10px; padding-top: 5px; position: relative; 
+        }
         
         .btn-group { display: flex; gap: 8px; margin-top: 10px; justify-content: center; position: relative; align-items: center; }
         button { flex: 1; padding: 5px 14px; background-color: #1877f2; color: #fff; border: none; border-radius: 8px; font-weight: 700; font-size: 1rem; cursor: pointer; }
         button.in, button.out { background-color: #595959; }
         .add-row { background-color: transparent; border: none; width: auto; padding: 8px; flex: none; }
         
-        .autocomplete-list { position: absolute; background: #fff; border: 1px solid #ccc; border-radius: 6px; z-index: 99; max-height: 180px; overflow-y: auto; width: 100%; box-shadow: 0 4px 10px rgba(0,0,0,0.1); text-align: left; display: none; }
+        .autocomplete-list { 
+            position: absolute; background: #fff; border: 1px solid #ccc; border-radius: 6px; 
+            z-index: 99; max-height: 180px; overflow-y: auto; width: 100%; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1); text-align: left; display: none; 
+        }
         .autocomplete-item { padding: 10px; cursor: pointer; border-bottom: 1px solid #eee; }
         .autocomplete-item:hover { background: #1877f2; color: #fff; }
 
-        /* Tombol Hapus */
+        /* Hilangkan tombol hapus di baris pertama saja */
         .delete-row { position: absolute; top: 4px; right: 6px; background: none; border: none; color: #dc2626; font-weight: bold; cursor: pointer; }
-        #itemContainer .item-row:first-child .delete-row { display: none; } /* Sembunyikan di baris pertama */
+        #itemContainer .item-row:first-child .delete-row { display: none; }
 
-        /* Popup Position & Style */
-        .popup-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 2000; }
+        /* Overlay Popups */
+        .popup-overlay { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.5); display: none; justify-content: center; 
+            align-items: center; z-index: 2000; 
+        }
         .popup-box { background: #fff; border-radius: 16px; padding: 24px; width: 90%; max-width: 320px; text-align: center; }
         
-        .popup-toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: #333; color: #fff; padding: 10px 18px; border-radius: 8px; display: none; z-index: 999; }
+        .popup-toast { 
+            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); 
+            background: #333; color: #fff; padding: 10px 18px; border-radius: 8px; 
+            display: none; z-index: 3000; 
+        }
         
         .header-actions { position: absolute; top: 10px; left: 20px; display: flex; gap: 8px; z-index: 10; }
-        #historyPopup { position: absolute; top: 40px; left: 20px; background: #fff; border: 1px solid #ccc; border-radius: 8px; width: 280px; max-height: 350px; overflow-y: auto; padding: 10px; display: none; text-align: left; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+        #historyPopup { 
+            position: absolute; top: 40px; left: 20px; background: #fff; border: 1px solid #ccc; 
+            border-radius: 8px; width: 280px; max-height: 350px; overflow-y: auto; 
+            padding: 10px; display: none; text-align: left; box-shadow: 0 4px 12px rgba(0,0,0,0.15); 
+        }
         
         .loader { display: none; border: 4px solid #f3f3f3; border-top: 4px solid #1877f2; border-radius: 50%; width: 36px; height: 36px; animation: spin 0.8s linear infinite; margin: 20px auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
@@ -56,11 +88,11 @@
         <button id="refreshBtn" type="button" onclick="fetchDataAndUpdateUI(false)" style="background:none; width:auto; padding:0;">
             <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#1877f2"><path d="M480-160q-134 0-227-93t-93-227q0-134 93-227t227-93q69 0 132 28.5T720-690v-110h80v280H520v-80h168q-32-56-87.5-88T480-720q-100 0-170 70t-70 170q0 100 70 170t170 70q77 0 139-44t87-116h84q-28 106-114 173t-196 67Z"/></svg>
         </button>
-        <button id="historyBtn" type="button" onclick="toggleHistoryPopup()" style="display:none; background:none; color:#1877f2; width:auto;">~5</button>
+        <button id="historyBtn" type="button" onclick="toggleHistoryPopup()" style="display:none; background:none; color:#1877f2; width:auto; font-weight:bold;">~5</button>
     </div>
     
     <div id="historyPopup">
-        <h4 style="margin:0 0 10px 0; text-align:center;">5 Last Trx</h4>
+        <h4 style="margin:0 0 10px 0; text-align:center; color:#1877f2;">5 Last Trx</h4>
         <div id="historyList"></div>
     </div>
     
@@ -70,7 +102,7 @@
     
     <form id="myForm">
         <div id="nameWrapper">
-            <input type="text" id="name" placeholder="Name" autocomplete="off" required>
+            <input type="text" id="name" class="name" placeholder="Name" autocomplete="off" required>
             <div id="nameList" class="autocomplete-list"></div>
         </div>
 
@@ -129,9 +161,12 @@
 </div>
 
 <script>
+    // --- GANTI DENGAN URL WEB APP GAS ANDA ---
     const scriptURL = 'https://script.google.com/macros/s/AKfycbwgPshFWH1uquWsPdR2Gp-V29e5FwiL5ZIJBj2eixI4vOaWrWRIC_9xZ-wRObcgmn-39g/exec';
+    
     let nameData = [], itemData = [], itemStock = {}, lastTransactions = [], gaMode = false, activeTextarea = null, longPressTimer;
 
+    // Fetch Data
     async function fetchDataAndUpdateUI(isInitialLoad = true) {
         const refreshBtn = document.getElementById("refreshBtn");
         refreshBtn.style.opacity = "0.5";
@@ -140,10 +175,11 @@
             const data = await resp.json();
             nameData = data.names; itemData = data.items; itemStock = data.stocks; lastTransactions = data.transactions || [];
             if (isInitialLoad) initAutocomplete();
-        } catch (e) { showToast("❌ Gagal Memuat Data!"); }
+        } catch (e) { showToast("❌ Gagal Sinkronisasi Data!"); }
         finally { refreshBtn.style.opacity = "1"; }
     }
 
+    // Autocomplete Logic
     function initAutocomplete() {
         setupAutocomplete(document.getElementById("name"), document.getElementById("nameList"), nameData);
         document.querySelectorAll(".item").forEach(input => {
@@ -169,9 +205,10 @@
         });
     }
 
+    // Submit Logic
     async function handleSubmit(mode) {
         const name = document.getElementById("name").value.trim();
-        if (!nameData.includes(name)) return showToast("⚠️ Pilih Nama!");
+        if (!nameData.includes(name)) return showToast("⚠️ Pilih Nama yang valid!");
         const rows = [...document.querySelectorAll(".item-row")];
         const items = rows.map(row => ({
             item: row.querySelector(".item").value.trim(),
@@ -179,7 +216,7 @@
             desc: row.querySelector(".desc").value.trim()
         })).filter(it => it.item && it.qty);
 
-        if (!items.length) return showToast("⚠️ Isi Item!");
+        if (!items.length) return showToast("⚠️ Isi data barang!");
         if (mode === "out") {
             for (let it of items) { if ((itemStock[it.item] || 0) < it.qty) return showToast(`⚠️ Stok ${it.item} Kurang!`); }
         }
@@ -201,7 +238,25 @@
         finally { document.getElementById("loader").style.display = "none"; }
     }
 
-    // Long Press Description
+    // Click Outside To Close Logic
+    document.addEventListener("click", function(event) {
+        const historyPopup = document.getElementById("historyPopup");
+        const historyBtn = document.getElementById("historyBtn");
+        
+        // Tutup History jika klik di luar
+        if (historyPopup.style.display === "block") {
+            if (!historyPopup.contains(event.target) && !historyBtn.contains(event.target)) {
+                historyPopup.style.display = "none";
+            }
+        }
+        
+        // Tutup Autocomplete jika klik di luar input
+        if (!event.target.closest('.item') && !event.target.closest('.name')) {
+            document.querySelectorAll('.autocomplete-list').forEach(list => list.style.display = 'none');
+        }
+    });
+
+    // Long Press Logic
     document.addEventListener("mousedown", startPress); document.addEventListener("touchstart", startPress);
     document.addEventListener("mouseup", cancelPress); document.addEventListener("touchend", cancelPress);
     function startPress(e) {
@@ -216,6 +271,7 @@
     function cancelPress() { clearTimeout(longPressTimer); }
     function closeDescPopup() { if (activeTextarea) activeTextarea.value = document.getElementById("descPopupInput").value; document.getElementById("descPopup").style.display = "none"; }
 
+    // UI Helpers
     function showToast(m) { const t = document.getElementById("popupToast"); t.textContent = m; t.style.display = "block"; setTimeout(() => t.style.display="none", 2500); }
     function showSuccessPopup(m, its) {
         document.getElementById("successMode").textContent = m.toUpperCase();
@@ -223,6 +279,7 @@
         document.getElementById("successPopup").style.display = "flex";
     }
     function closeSuccessPopup() { document.getElementById("successPopup").style.display = "none"; }
+    
     function toggleHistoryPopup() {
         const p = document.getElementById("historyPopup");
         p.style.display = p.style.display === "block" ? "none" : "block";
@@ -233,9 +290,11 @@
                 </div>`).join('');
         }
     }
+
     function checkPassword() { if (document.getElementById("adminPass").value === "admin123") { document.getElementById("passPopup").style.display = "none"; document.getElementById("adminPass").value = ""; handleSubmit("in"); } else showToast("❌ Salah!"); }
     function closePassPopup() { document.getElementById("passPopup").style.display = "none"; }
 
+    // Event Listeners
     document.getElementById("addRow").onclick = () => {
         const container = document.getElementById("itemContainer");
         if (container.children.length >= 5) return showToast("⚠️ Maksimal 5");
