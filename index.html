@@ -10,9 +10,12 @@
         * { box-sizing: border-box; font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
         body { margin: 0; padding: 0; background: url('https://raw.githubusercontent.com/pilipmul/PBC-cek-Piutang/6d34302da336e6b94b116bff0ce07084c5f95c3e/BG2.jpg') no-repeat center center fixed; background-size: cover; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; padding-top: 20px; }
         
-        .container { width: 100%; max-width: 480px; background: #ffffff; padding: 20px 22px 28px 22px; border-radius: 16px; border: 2px solid #1877f2; box-shadow: 0 10px 30px rgba(0,0,0,0.2); position: relative; text-align: center; }
+        .container { 
+            width: 100%; max-width: 480px; background: #ffffff; padding: 20px 22px 28px 22px; 
+            border-radius: 16px; border: 2px solid #1877f2; box-shadow: 0 10px 30px rgba(0,0,0,0.2); 
+            position: relative; text-align: center; 
+        }
         
-        /* EFEK TEKAN PADA JUDUL */
         #titleBtn { width: 100%; max-width: 280px; cursor: pointer; transition: transform 0.1s ease, opacity 0.2s; user-select: none; }
         #titleBtn:active { transform: scale(0.95); opacity: 0.8; }
 
@@ -39,11 +42,20 @@
         
         .popup-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 3000; }
         .popup-box { background: #fff; border-radius: 16px; padding: 24px; width: 90%; max-width: 320px; text-align: center; border: 1px solid #1877f2; }
-        .popup-toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: #333; color: #fff; padding: 10px 18px; border-radius: 8px; display: none; z-index: 4000; }
+        
+        /* POSISI POPUP TOAST DI TENAH MENU UTAMA */
+        .popup-toast { 
+            position: absolute; top: 50%; left: 50%; 
+            transform: translate(-50%, -50%); 
+            background: rgba(33, 33, 33, 0.95); color: #fff; 
+            padding: 12px 20px; border-radius: 12px; 
+            display: none; z-index: 5000; width: 80%; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            pointer-events: none; /* Agar tidak menghalangi klik jika error */
+        }
         
         .header-actions { position: absolute; top: 10px; left: 20px; display: flex; gap: 8px; z-index: 10; }
         
-        /* ANIMASI RELOAD BERPUTAR */
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .spinning { animation: spin 1s linear infinite; }
 
@@ -53,7 +65,7 @@
             border: 2px solid #1877f2; border-radius: 8px; 
             width: 280px; max-height: 350px; overflow-y: auto; 
             padding: 12px; display: none; text-align: left; 
-            box-shadow: 0 8px 24px rgba(0,0,0,0.4); z-index: 5000; 
+            box-shadow: 0 8px 24px rgba(0,0,0,0.4); z-index: 4000; 
         }
 
         .loader { display: none; border: 4px solid #f3f3f3; border-top: 4px solid #1877f2; border-radius: 50%; width: 36px; height: 36px; animation: spin 0.8s linear infinite; margin: 20px auto; }
@@ -61,6 +73,8 @@
 </head>
 <body>
 <div class="container">
+    <div id="popupToast" class="popup-toast"></div>
+
     <div class="header-actions">
         <button id="refreshBtn" type="button" onclick="fetchDataAndUpdateUI(false)" style="background:none; width:auto; padding:0;">
             <svg id="refreshIcon" xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#1877f2"><path d="M480-160q-134 0-227-93t-93-227q0-134 93-227t227-93q69 0 132 28.5T720-690v-110h80v280H520v-80h168q-32-56-87.5-88T480-720q-100 0-170 70t-70 170q0 100 70 170t170 70q77 0 139-44t87-116h84q-28 106-114 173t-196 67Z"/></svg>
@@ -108,7 +122,6 @@
     </form>
 </div>
 
-<div id="popupToast" class="popup-toast"></div>
 <div id="successPopup" class="popup-overlay"><div class="popup-box"><div id="successMode" style="background:#facc15; font-weight:700; padding:5px; border-radius:10px; margin-bottom:10px;"></div><div id="successItems" style="text-align:left; margin-bottom:15px; font-size: 0.9rem;"></div><button onclick="closeSuccessPopup()" style="width:100%;">Close</button></div></div>
 <div id="descPopup" class="popup-overlay"><div class="popup-box" style="max-width:400px; height:60%;"><h4>Edit Description</h4><textarea id="descPopupInput" style="height:70% !important; border:1px solid #ccc; margin:10px 0; border-radius:8px; text-align:left;"></textarea><button onclick="closeDescPopup()" style="width:100%;">Save & Close</button></div></div>
 <div id="passPopup" class="popup-overlay"><div class="popup-box"><h3>Password</h3><input type="password" id="adminPass" style="border:1px solid #ccc; margin-bottom:15px;"><div class="btn-group"><button onclick="checkPassword()">OK</button><button onclick="closePassPopup()" style="background:#595959;">Batal</button></div></div></div>
@@ -119,16 +132,14 @@
 
     async function fetchDataAndUpdateUI(isInitialLoad = true) {
         const icon = document.getElementById("refreshIcon");
-        icon.classList.add("spinning"); // MULAI BERPUTAR
+        icon.classList.add("spinning");
         try {
             const resp = await fetch(`${scriptURL}?action=getDropdownData`);
             const data = await resp.json();
             nameData = data.names; itemData = data.items; itemStock = data.stocks; lastTransactions = data.transactions || [];
             if (isInitialLoad) initAutocomplete();
         } catch (e) { showToast("❌ Gagal Sinkronisasi!"); }
-        finally { 
-            setTimeout(() => icon.classList.remove("spinning"), 500); // BERHENTI BERPUTAR
-        }
+        finally { setTimeout(() => icon.classList.remove("spinning"), 500); }
     }
 
     function initAutocomplete() {
@@ -158,7 +169,7 @@
 
     async function handleSubmit(mode) {
         const name = document.getElementById("name").value.trim();
-        if (!nameData.includes(name)) return showToast("⚠️ Pilih Nama yang valid!");
+        if (!nameData.includes(name)) return showToast("⚠️ Pilih Nama!");
         const items = [...document.querySelectorAll(".item-row")].map(row => ({
             item: row.querySelector(".item").value.trim(),
             qty: parseInt(row.querySelector(".qty").value),
@@ -191,7 +202,14 @@
     function startPress(e) { if (e.target.classList.contains("desc")) { activeTextarea = e.target; longPressTimer = setTimeout(() => { document.getElementById("descPopupInput").value = activeTextarea.value; document.getElementById("descPopup").style.display = "flex"; }, 600); } }
     function cancelPress() { clearTimeout(longPressTimer); }
     function closeDescPopup() { if (activeTextarea) activeTextarea.value = document.getElementById("descPopupInput").value; document.getElementById("descPopup").style.display = "none"; }
-    function showToast(m) { const t = document.getElementById("popupToast"); t.textContent = m; t.style.display = "block"; setTimeout(() => t.style.display="none", 2500); }
+    
+    function showToast(m) { 
+        const t = document.getElementById("popupToast"); 
+        t.textContent = m; 
+        t.style.display = "block"; 
+        setTimeout(() => t.style.display="none", 2500); 
+    }
+    
     function showSuccessPopup(m, its) { document.getElementById("successMode").textContent = m.toUpperCase(); document.getElementById("successItems").innerHTML = its.map(i => `• ${i.item} = ${i.qty}`).join('<br>'); document.getElementById("successPopup").style.display = "flex"; }
     function closeSuccessPopup() { document.getElementById("successPopup").style.display = "none"; }
     
