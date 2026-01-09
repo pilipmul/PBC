@@ -34,7 +34,6 @@
         input:focus, textarea:focus { outline: none; }
         input.qty { border-left: 1px solid #1877f2; border-right: 1px solid #1877f2; }
         
-        /* NOTES PADDING */
         textarea.desc { resize: none; overflow-y: hidden; padding-top: 10px; padding-right: 20px; }
         
         .row-3col { 
@@ -54,27 +53,31 @@
         .autocomplete-item { padding: 10px; cursor: pointer; border-bottom: 1px solid #eee; }
         .autocomplete-item:hover { background: #1877f2; color: #fff; }
         
-        /* TOMBOL HAPUS SIMPEL "x" */
         .delete-row { 
-            position: absolute; 
-            top: -10px; 
-            right: -2px; 
-            background: transparent; 
-            border: none; 
-            color: #dc2626; 
-            font-weight: bold; 
-            cursor: pointer; 
-            font-size: 1.1rem; 
-            padding: 5px;
-            opacity: 0.6;
-            transition: opacity 0.2s;
+            position: absolute; top: -10px; right: -2px; 
+            background: transparent; border: none; color: #dc2626; 
+            font-weight: bold; cursor: pointer; font-size: 1.1rem; 
+            padding: 5px; opacity: 0.6; transition: opacity 0.2s;
         }
         .delete-row:hover { opacity: 1; }
         #itemContainer .item-row:first-child .delete-row { display: none; }
         
+        /* POPUP OVERLAY */
         .popup-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 6000; }
         .popup-box { background: #fff; border-radius: 16px; padding: 24px; width: 90%; max-width: 320px; text-align: center; border: 2px solid #1877f2; }
         
+        /* PERBAIKAN LABEL IN/OUT DI POPUP SUKSES */
+        #successMode { 
+            background: #facc15; 
+            font-weight: 700; 
+            padding: 4px 16px; 
+            border-radius: 20px; 
+            margin-bottom: 15px; 
+            display: inline-block; /* KUNCI: Lebar pas dengan teks */
+            color: #333;
+        }
+
+        /* POPUP TOAST (PEMBERITAHUAN SINGKAT) */
         .popup-toast { 
             position: absolute; top: 50%; left: 50%; 
             transform: translate(-50%, -50%); 
@@ -154,7 +157,13 @@
     </form>
 </div>
 
-<div id="successPopup" class="popup-overlay"><div class="popup-box"><div id="successMode" style="background:#facc15; font-weight:700; padding:5px; border-radius:10px; margin-bottom:10px;"></div><div id="successItems" style="text-align:left; margin-bottom:15px; font-size: 0.9rem;"></div><button onclick="closeSuccessPopup()" style="width:100%;">Close</button></div></div>
+<div id="successPopup" class="popup-overlay">
+    <div class="popup-box">
+        <div id="successMode"></div> <div id="successItems" style="text-align:left; margin-bottom:15px; font-size: 0.9rem;"></div>
+        <button onclick="closeSuccessPopup()" style="width:100%;">Close</button>
+    </div>
+</div>
+
 <div id="descPopup" class="popup-overlay"><div class="popup-box" style="max-width:400px; height:60%;"><h4>Edit Notes</h4><textarea id="descPopupInput" style="height:70% !important; border:1px solid #ccc; margin:10px 0; border-radius:8px; text-align:left;"></textarea><button onclick="closeDescPopup()" style="width:100%;">Save & Close</button></div></div>
 <div id="passPopup" class="popup-overlay"><div class="popup-box"><h3>Password</h3><input type="password" id="adminPass" style="border:1px solid #ccc; margin-bottom:15px;"><div class="btn-group"><button onclick="checkPassword()">OK</button><button onclick="closePassPopup()" style="background:#595959;">Batal</button></div></div></div>
 
@@ -241,7 +250,11 @@
         setTimeout(() => t.style.display="none", 2500); 
     }
     
-    function showSuccessPopup(m, its) { document.getElementById("successMode").textContent = m.toUpperCase(); document.getElementById("successItems").innerHTML = its.map(i => `• ${i.item} = ${i.qty}`).join('<br>'); document.getElementById("successPopup").style.display = "flex"; }
+    function showSuccessPopup(m, its) { 
+        document.getElementById("successMode").textContent = m.toUpperCase(); 
+        document.getElementById("successItems").innerHTML = its.map(i => `• ${i.item} = ${i.qty}`).join('<br>'); 
+        document.getElementById("successPopup").style.display = "flex"; 
+    }
     function closeSuccessPopup() { document.getElementById("successPopup").style.display = "none"; }
     
     function toggleHistoryPopup() {
