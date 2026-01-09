@@ -88,7 +88,6 @@
             box-shadow: 0 8px 24px rgba(0,0,0,0.4); z-index: 5000; 
         }
 
-        /* LOADER OVERLAY (FIXED IN CENTER) */
         #loaderOverlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(255, 255, 255, 0.4); display: none;
@@ -107,7 +106,7 @@
         <button id="refreshBtn" type="button" onclick="fetchDataAndUpdateUI(false)" style="background:none; width:auto; padding:0;">
             <svg id="refreshIcon" xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#1877f2"><path d="M480-160q-134 0-227-93t-93-227q0-134 93-227t227-93q69 0 132 28.5T720-690v-110h80v280H520v-80h168q-32-56-87.5-88T480-720q-100 0-170 70t-70 170q0 100 70 170t170 70q77 0 139-44t87-116h84q-28 106-114 173t-196 67Z"/></svg>
         </button>
-        <button id="historyBtn" type="button" onclick="toggleHistoryPopup()" style="display:none; background:none; color:#1877f2; width:auto; font-weight:bold;">~5</button>
+        <button id="historyBtn" type="button" onclick="toggleHistoryPopup(event)" style="display:none; background:none; color:#1877f2; width:auto; font-weight:bold;">~5</button>
     </div>
     
     <div id="historyPopup">
@@ -258,12 +257,31 @@
     }
     function closeSuccessPopup() { document.getElementById("successPopup").style.display = "none"; }
     
-    function toggleHistoryPopup() {
-        const p = document.getElementById("historyPopup"); p.style.display = p.style.display === "block" ? "none" : "block";
-        if (p.style.display === "block") {
+    // Perubahan: Fungsi toggle disesuaikan agar tidak bentrok dengan event click global
+    function toggleHistoryPopup(event) {
+        if (event) event.stopPropagation();
+        const p = document.getElementById("historyPopup");
+        const isVisible = p.style.display === "block";
+        
+        if (!isVisible) {
+            p.style.display = "block";
             document.getElementById("historyList").innerHTML = lastTransactions.map(t => `<div style="font-size:0.8rem; border-bottom:1px solid #eee; padding:8px; background:#f3f4f6; margin-bottom:5px; border-radius:5px;"><b>${t[0]}</b> <span style="color:${t[1]==='in'?'#10b981':'#ef4444'}">${t[1].toUpperCase()}</span> ${t[2]}</div>`).join('');
+        } else {
+            p.style.display = "none";
         }
     }
+
+    // Penambahan: Event Listener Global untuk menutup history saat klik di area manapun
+    document.addEventListener("click", function(event) {
+        const historyPopup = document.getElementById("historyPopup");
+        const historyBtn = document.getElementById("historyBtn");
+
+        if (historyPopup.style.display === "block" && 
+            !historyPopup.contains(event.target) && 
+            !historyBtn.contains(event.target)) {
+            historyPopup.style.display = "none";
+        }
+    });
 
     function checkPassword() { if (document.getElementById("adminPass").value === "admin123") { document.getElementById("passPopup").style.display = "none"; document.getElementById("adminPass").value = ""; handleSubmit("in"); } else showToast("❌ Salah!"); }
     function closePassPopup() { document.getElementById("passPopup").style.display = "none"; }
