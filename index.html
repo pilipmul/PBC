@@ -62,22 +62,28 @@
         .delete-row:hover { opacity: 1; }
         #itemContainer .item-row:first-child .delete-row { display: none; }
         
-        /* POPUP OVERLAY */
         .popup-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 6000; }
         .popup-box { background: #fff; border-radius: 16px; padding: 24px; width: 90%; max-width: 320px; text-align: center; border: 2px solid #1877f2; }
         
-        /* PERBAIKAN LABEL IN/OUT DI POPUP SUKSES */
+        /* MODAL BUTTON STYLE - PAS DENGAN TEKS */
+        .modal-btn { 
+            width: fit-content; 
+            min-width: 100px;
+            margin: 0 auto; 
+            display: block; 
+            padding: 8px 20px;
+        }
+
         #successMode { 
             background: #facc15; 
             font-weight: 700; 
             padding: 4px 16px; 
             border-radius: 20px; 
             margin-bottom: 15px; 
-            display: inline-block; /* KUNCI: Lebar pas dengan teks */
+            display: inline-block; 
             color: #333;
         }
 
-        /* POPUP TOAST (PEMBERITAHUAN SINGKAT) */
         .popup-toast { 
             position: absolute; top: 50%; left: 50%; 
             transform: translate(-50%, -50%); 
@@ -159,13 +165,30 @@
 
 <div id="successPopup" class="popup-overlay">
     <div class="popup-box">
-        <div id="successMode"></div> <div id="successItems" style="text-align:left; margin-bottom:15px; font-size: 0.9rem;"></div>
-        <button onclick="closeSuccessPopup()" style="width:100%;">Close</button>
+        <div id="successMode"></div>
+        <div id="successItems" style="text-align:left; margin-bottom:20px; font-size: 0.9rem;"></div>
+        <button class="modal-btn" onclick="closeSuccessPopup()">Close</button>
     </div>
 </div>
 
-<div id="descPopup" class="popup-overlay"><div class="popup-box" style="max-width:400px; height:60%;"><h4>Edit Notes</h4><textarea id="descPopupInput" style="height:70% !important; border:1px solid #ccc; margin:10px 0; border-radius:8px; text-align:left;"></textarea><button onclick="closeDescPopup()" style="width:100%;">Save & Close</button></div></div>
-<div id="passPopup" class="popup-overlay"><div class="popup-box"><h3>Password</h3><input type="password" id="adminPass" style="border:1px solid #ccc; margin-bottom:15px;"><div class="btn-group"><button onclick="checkPassword()">OK</button><button onclick="closePassPopup()" style="background:#595959;">Batal</button></div></div></div>
+<div id="descPopup" class="popup-overlay">
+    <div class="popup-box" style="max-width:400px; height:60%;">
+        <h4>Edit Notes</h4>
+        <textarea id="descPopupInput" style="height:70% !important; border:1px solid #ccc; margin-bottom:15px; border-radius:8px; text-align:left;"></textarea>
+        <button class="modal-btn" onclick="closeDescPopup()">Save & Close</button>
+    </div>
+</div>
+
+<div id="passPopup" class="popup-overlay">
+    <div class="popup-box">
+        <h3>Password</h3>
+        <input type="password" id="adminPass" style="border:1px solid #ccc; margin-bottom:15px;">
+        <div class="btn-group">
+            <button class="modal-btn" onclick="checkPassword()">OK</button>
+            <button class="modal-btn" onclick="closePassPopup()" style="background:#595959;">Batal</button>
+        </div>
+    </div>
+</div>
 
 <script>
     const scriptURL = 'https://script.google.com/macros/s/AKfycbwgPshFWH1uquWsPdR2Gp-V29e5FwiL5ZIJBj2eixI4vOaWrWRIC_9xZ-wRObcgmn-39g/exec';
