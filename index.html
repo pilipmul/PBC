@@ -2,332 +2,362 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>PBC SyncFlow</title> 
+    <title>PBC SyncFlow Pro</title> 
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/png" href="https://raw.githubusercontent.com/pilipmul/PBC-cek-Piutang/main/logo%20citanusa.png">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Montserrat:wght@700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --primary: #1877f2;
+            --primary-dark: #145dbf;
+            --success: #10b981;
+            --danger: #ef4444;
+            --gray: #64748b;
+            --bg-light: #f8fafc;
+        }
+
         * { box-sizing: border-box; font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
+        
         body { 
             margin: 0; padding: 0; 
-            background: url('https://raw.githubusercontent.com/pilipmul/PBC-cek-Piutang/6d34302da336e6b94b116bff0ce07084c5f95c3e/BG2.jpg') no-repeat center center fixed; 
+            background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('https://raw.githubusercontent.com/pilipmul/PBC-cek-Piutang/6d34302da336e6b94b116bff0ce07084c5f95c3e/BG2.jpg') no-repeat center center fixed; 
             background-size: cover; display: flex; justify-content: center; 
-            align-items: flex-start; min-height: 100vh; padding-top: 20px; 
+            align-items: flex-start; min-height: 100vh; padding: 20px 10px;
         }
         
         .container { 
-            width: 92%; max-width: 440px; background: #ffffff; padding: 20px 22px 28px 22px; 
-            border-radius: 16px; border: 2px solid #1877f2; box-shadow: 0 10px 30px rgba(0,0,0,0.2); 
-            position: relative; text-align: center; margin-bottom: 20px;
+            width: 100%; max-width: 450px; background: rgba(255, 255, 255, 0.98); 
+            padding: 25px; border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.3); 
+            position: relative; backdrop-filter: blur(10px);
         }
         
-        #titleBtn { width: 100%; max-width: 280px; cursor: pointer; transition: transform 0.1s ease, opacity 0.2s; user-select: none; }
-        #titleBtn:active { transform: scale(0.95); opacity: 0.8; }
+        #titleBtn { width: 100%; max-width: 260px; cursor: pointer; transition: 0.3s; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1)); }
+        #titleBtn:hover { transform: translateY(-2px); }
+        #titleBtn:active { transform: scale(0.95); }
 
-        #nameWrapper { position: relative; padding-top: 7px; border-top: 1px solid #1877f2; padding-bottom: 7px; border-bottom: 1px solid #1877f2; }
+        .input-group { position: relative; margin-bottom: 15px; border: 1.5px solid #e2e8f0; border-radius: 12px; transition: 0.3s; background: #fff; }
+        .input-group:focus-within { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(24, 119, 242, 0.1); }
         
         input, textarea { 
-            width: 100%; padding: 10px; border: none; font-size: 1rem; 
-            background-color: transparent; text-align: center; 
-            height: 42px; line-height: 22px; display: block;
-        }
-        input:focus, textarea:focus { outline: none; }
-        input.qty { border-left: 1px solid #1877f2; border-right: 1px solid #1877f2; }
-        
-        textarea.desc { resize: none; overflow-y: hidden; padding-top: 10px; padding-right: 20px; }
-        
-        .row-3col { 
-            display: grid; grid-template-columns: 40% 20% 36%; gap: 8px; 
-            align-items: center; 
-            margin-bottom: 10px; border-bottom: 1px solid #1877f2; 
-            padding-bottom: 10px; padding-top: 5px; position: relative; 
+            width: 100%; padding: 12px; border: none; font-size: 14px; 
+            background: transparent; text-align: center; outline: none; color: #1e293b;
         }
         
-        .btn-group { display: flex; gap: 8px; margin-top: 10px; justify-content: center; position: relative; align-items: center; }
-        button { flex: 1; padding: 5px 14px; background-color: #1877f2; color: #fff; border: none; border-radius: 8px; font-weight: 700; font-size: 1rem; cursor: pointer; transition: opacity 0.2s; }
-        button:active { opacity: 0.7; }
-        button.in, button.out { background-color: #595959; }
-        .add-row { background-color: transparent; border: none; width: auto; padding: 8px; flex: none; }
+        /* Layout Baris Item */
+        .item-row { 
+            position: relative; background: var(--bg-light); border-radius: 15px;
+            padding: 15px; margin-bottom: 15px; border: 1px solid #e2e8f0;
+            display: grid; grid-template-columns: 1fr 80px; gap: 10px;
+        }
         
-        .autocomplete-list { position: absolute; background: #fff; border: 1px solid #ccc; border-radius: 6px; z-index: 2000; max-height: 180px; overflow-y: auto; width: 100%; box-shadow: 0 4px 10px rgba(0,0,0,0.1); text-align: left; display: none; }
-        .autocomplete-item { padding: 10px; cursor: pointer; border-bottom: 1px solid #eee; }
-        .autocomplete-item:hover { background: #1877f2; color: #fff; }
+        .row-top { grid-column: span 2; display: flex; gap: 10px; }
+        .row-bottom { grid-column: span 2; }
+
+        .qty-input { width: 80px; border-left: 1px solid #cbd5e1; }
         
+        /* Buttons */
+        .btn-group { display: flex; gap: 12px; margin-top: 20px; }
+        button { 
+            flex: 1; padding: 12px; border: none; border-radius: 12px; 
+            font-weight: 700; cursor: pointer; transition: 0.3s;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+        
+        .btn-in { background: var(--gray); color: white; }
+        .btn-out { background: var(--primary); color: white; }
+        .btn-add { background: #f1f5f9; color: var(--primary); flex: 0.4; }
+        button:hover { filter: brightness(1.1); }
+        button:active { transform: scale(0.98); }
+
+        /* Autocomplete */
+        .autocomplete-list { 
+            position: absolute; top: 100%; left: 0; right: 0; background: #fff; 
+            border-radius: 12px; z-index: 2000; max-height: 200px; overflow-y: auto; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15); display: none; margin-top: 5px;
+        }
+        .autocomplete-item { padding: 12px; cursor: pointer; border-bottom: 1px solid #f1f5f9; text-align: left; font-size: 13px; }
+        .autocomplete-item:hover { background: var(--primary); color: white; }
+        .stock-tag { float: right; font-size: 10px; background: #e2e8f0; padding: 2px 6px; border-radius: 10px; color: var(--gray); }
+
         .delete-row { 
-            position: absolute; top: -10px; right: -2px; 
-            background: transparent; border: none; color: #dc2626; 
-            font-weight: bold; cursor: pointer; font-size: 1.1rem; 
-            padding: 5px; opacity: 0.6; transition: opacity 0.2s;
+            position: absolute; top: -10px; right: -10px; background: white; 
+            color: var(--danger); width: 24px; height: 24px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2); font-size: 18px; padding: 0;
         }
-        .delete-row:hover { opacity: 1; }
-        #itemContainer .item-row:first-child .delete-row { display: none; }
-        
-        .popup-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 6000; }
-        .popup-box { background: #fff; border-radius: 16px; padding: 24px; width: 90%; max-width: 320px; text-align: center; border: 2px solid #1877f2; }
-        
-        .modal-btn { width: fit-content; min-width: 100px; margin: 0 auto; display: block; padding: 8px 20px; }
 
-        #successMode { background: #facc15; font-weight: 700; padding: 4px 16px; border-radius: 20px; margin-bottom: 15px; display: inline-block; color: #333; }
-
-        .popup-toast { 
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
-            background: rgba(33, 33, 33, 0.95); color: #fff; padding: 12px 24px; border-radius: 12px; 
-            display: none; z-index: 7000; width: fit-content; max-width: 85%; white-space: nowrap; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.4); pointer-events: none; font-weight: 600;
-        }
+        /* Popups */
+        .popup-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: center; z-index: 9000; backdrop-filter: blur(4px); }
+        .popup-box { background: #fff; border-radius: 20px; padding: 25px; width: 90%; max-width: 350px; text-align: center; }
         
-        .header-actions { position: absolute; top: 10px; left: 20px; display: flex; gap: 8px; z-index: 10; }
-        
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .spinning { animation: spin 1s linear infinite; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
         #historyPopup { 
-            position: absolute; top: 40px; left: 20px; background-color: #ffffff !important; 
-            border: 2px solid #1877f2; border-radius: 8px; width: 280px; max-height: 350px; 
-            overflow-y: auto; padding: 12px; display: none; text-align: left; 
-            box-shadow: 0 8px 24px rgba(0,0,0,0.4); z-index: 5000; 
+            position: absolute; top: 50px; left: 10px; background: #fff; 
+            width: 280px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            padding: 15px; display: none; z-index: 5000; border: 1px solid var(--primary);
         }
 
-        #loaderOverlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(255, 255, 255, 0.4); display: none;
-            justify-content: center; align-items: center; z-index: 9999;
-        }
-        .loader { border: 6px solid #f3f3f3; border-top: 6px solid #1877f2; border-radius: 50%; width: 50px; height: 50px; animation: spin 0.8s linear infinite; }
-
-        #descPopupInput {
-            width: 100% !important; 
-            max-width: 100%;
-            height: 150px !important; 
-            border: 1px solid #1877f2; 
-            margin-bottom: 15px; 
-            border-radius: 12px; 
-            text-align: center; 
-            padding: 15px;
-            resize: vertical; 
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background-color: #f9f9f9;
-            line-height: 1.5;
+        .toast {
+            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+            background: #1e293b; color: white; padding: 12px 25px; border-radius: 30px;
+            font-size: 14px; z-index: 10000; display: none; box-shadow: 0 5px 15px rgba(0,0,0,0.3);
         }
     </style>
 </head>
 <body>
-<div id="loaderOverlay"><div class="loader"></div></div>
+
+<div id="loaderOverlay" class="popup-overlay"><div style="width: 50px; height: 50px; border: 5px solid #fff; border-top-color: var(--primary); border-radius: 50%;" class="spinning"></div></div>
 
 <div class="container">
-    <div id="popupToast" class="popup-toast"></div>
-
-    <div class="header-actions">
-        <button id="refreshBtn" type="button" onclick="fetchDataAndUpdateUI(false)" style="background:none; width:auto; padding:0;">
-            <svg id="refreshIcon" xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#1877f2"><path d="M480-160q-134 0-227-93t-93-227q0-134 93-227t227-93q69 0 132 28.5T720-690v-110h80v280H520v-80h168q-32-56-87.5-88T480-720q-100 0-170 70t-70 170q0 100 70 170t170 70q77 0 139-44t87-116h84q-28 106-114 173t-196 67Z"/></svg>
+    <div class="header-actions" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+        <button id="refreshBtn" onclick="fetchDataAndUpdateUI(false)" style="background:none; width:32px; height:32px; padding:0;">
+            <svg id="refreshIcon" xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24" fill="var(--primary)"><path d="M480-160q-134 0-227-93t-93-227q0-134 93-227t227-93q69 0 132 28.5T720-690v-110h80v280H520v-80h168q-32-56-87.5-88T480-720q-100 0-170 70t-70 170q0 100 70 170t170 70q77 0 139-44t87-116h84q-28 106-114 173t-196 67Z"/></svg>
         </button>
-        <button id="historyBtn" type="button" onclick="toggleHistoryPopup(event)" style="display:none; background:none; color:#1877f2; width:auto; font-weight:bold;">~5</button>
+        <button id="historyBtn" onclick="toggleHistoryPopup(event)" style="display:none; background:var(--primary); color:white; width:auto; padding: 4px 12px; font-size: 12px; border-radius: 20px;">📜 History</button>
     </div>
-    
+
     <div id="historyPopup">
-        <h4 style="margin:0 0 10px 0; text-align:center; color:#1877f2;">5 Last Trx</h4>
-        <div id="historyList"></div>
+        <h4 style="margin:0 0 12px 0; color:var(--primary);">5 Transaksi Terakhir</h4>
+        <div id="historyList" style="max-height: 250px; overflow-y: auto;"></div>
     </div>
-    
-    <div style="text-align: center; margin: 20px 0;">
+
+    <div style="text-align: center; margin-bottom: 25px;">
         <img id="titleBtn" src="https://raw.githubusercontent.com/pilipmul/PBC-cek-Piutang/c917d70c8d2a8f1630b8dd1400a2d13c2aa55d65/Title%20PBC%20B.png" alt="PBC SyncFlow">
     </div>
-    
+
     <form id="myForm">
-        <div id="nameWrapper">
-            <input type="text" id="name" class="name" placeholder="Name" autocomplete="off" required>
+        <div class="input-group">
+            <input type="text" id="name" placeholder="Pilih Nama Anda" autocomplete="off" required>
             <div id="nameList" class="autocomplete-list"></div>
         </div>
 
         <div id="itemContainer">
-            <div class="row-3col item-row">
-                <div style="position: relative;">
-                    <input type="text" class="item" placeholder="Item" autocomplete="off" required>
-                    <div class="autocomplete-list"></div>
+            <div class="item-row">
+                <button type="button" class="delete-row" style="display:none">×</button>
+                <div class="row-top">
+                    <div style="flex:1; position:relative;">
+                        <input type="text" class="item" placeholder="Cari Item..." autocomplete="off" required>
+                        <div class="autocomplete-list"></div>
+                    </div>
+                    <input type="number" class="qty qty-input" min="1" placeholder="Qty" required>
                 </div>
-                <input type="number" class="qty" min="1" placeholder="Qty" required>
-                <div style="position: relative;">
-                    <textarea class="desc" placeholder="Notes"></textarea>
-                    <button type="button" class="delete-row">×</button>
+                <div class="row-bottom">
+                    <textarea class="desc" placeholder="Catatan (Opsional)" rows="1" oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"></textarea>
                 </div>
             </div>
         </div>
 
         <div class="btn-group">
-            <button type="button" class="in" id="btnIn">IN</button>
-            <button type="button" class="add-row" id="addRow">
-                <svg xmlns="http://www.w3.org/2000/svg" height="32px" viewBox="0 -960 960 960" width="32px" fill="#1877f2"><path d="M440-440H200v-80h240v-240h80v240h240v80H520v240h-80v-240Z"/></svg>
+            <button type="button" class="btn-in" id="btnIn">MASUK</button>
+            <button type="button" class="btn-add" id="addRow">
+                <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24" fill="currentColor"><path d="M440-440H200v-80h240v-240h80v240h240v80H520v240h-80v-240Z"/></svg>
             </button>
-            <button type="button" class="out" id="btnOut">OUT</button>
+            <button type="button" class="btn-out" id="btnOut">KELUAR</button>
         </div>
     </form>
 </div>
 
-<div id="successPopup" class="popup-overlay">
-    <div class="popup-box">
-        <div id="successMode"></div>
-        <div id="successItems" style="text-align:left; margin-bottom:20px; font-size: 0.9rem;"></div>
-        <button class="modal-btn" onclick="closeSuccessPopup()">Close</button>
-    </div>
-</div>
-
-<div id="descPopup" class="popup-overlay">
-    <div class="popup-box" style="max-width:350px; width:90%; padding: 25px 20px 20px 20px;">
-        <textarea id="descPopupInput" placeholder="Ketik catatan di sini..."></textarea>
-        <button class="modal-btn" onclick="closeDescPopup()">Save & Close</button>
-    </div>
-</div>
-
 <div id="passPopup" class="popup-overlay">
-    <div class="popup-box" style="width:92%;">
-        <input type="password" id="adminPass" placeholder="Admin Password" style="border:1px solid #1877f2; margin-bottom:15px; border-radius:12px; height:50px;">
-        <div class="btn-group" style="gap:15px;">
-            <button class="modal-btn" onclick="checkPassword()">OK</button>
-            <button class="modal-btn" onclick="closePassPopup()" style="background:#595959;">Batal</button>
+    <div class="popup-box">
+        <h3 style="margin-top:0">Admin Required</h3>
+        <input type="password" id="adminPass" placeholder="Password" style="border:1px solid #ddd; border-radius:8px; margin-bottom:15px; text-align:center;">
+        <div style="display:flex; gap:10px">
+            <button onclick="checkPassword()" style="background:var(--primary); color:white;">Login</button>
+            <button onclick="closePassPopup()" style="background:#eee; color:#333;">Batal</button>
         </div>
     </div>
 </div>
 
+<div id="successPopup" class="popup-overlay">
+    <div class="popup-box">
+        <div id="successIcon" style="font-size: 50px; color: var(--success); margin-bottom:10px;">check_circle</div>
+        <h2 id="successTitle" style="margin:0; color: var(--success);">Berhasil!</h2>
+        <div id="successItems" style="text-align:left; margin:15px 0; background:#f8fafc; padding:10px; border-radius:10px; font-size:13px;"></div>
+        <button onclick="closeSuccessPopup()" style="background:var(--primary); color:white; width:100%;">Selesai</button>
+    </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
 <script>
     const scriptURL = 'https://script.google.com/macros/s/AKfycbzNzaOwIeHkxlp9wdeHDlCLTfqbXlS-A6yzC8c-m4KDIzT-JlBLK_5QqBc6lHXmK41GSQ/exec';
-    let nameData = [], itemData = [], itemStock = {}, lastTransactions = [], gaMode = false, activeTextarea = null, longPressTimer;
+    let nameData = [], itemData = [], itemStock = {}, lastTransactions = [], gaMode = false;
 
-    async function fetchDataAndUpdateUI(isInitialLoad = true) {
+    // Load Data
+    async function fetchDataAndUpdateUI(isInitial = true) {
         const icon = document.getElementById("refreshIcon");
         icon.classList.add("spinning");
         try {
             const resp = await fetch(`${scriptURL}?action=getDropdownData`);
             const data = await resp.json();
-            nameData = data.names; itemData = data.items; itemStock = data.stocks; lastTransactions = data.transactions || [];
-            if (isInitialLoad) initAutocomplete();
-        } catch (e) { showToast("❌ Gagal Sinkronisasi!"); }
-        finally { setTimeout(() => icon.classList.remove("spinning"), 600); }
+            nameData = data.names; itemData = data.items; itemStock = data.stocks; 
+            lastTransactions = data.transactions || [];
+            initAutocomplete();
+            if(!isInitial) showToast("✅ Data diperbarui");
+        } catch (e) { 
+            showToast("❌ Koneksi Gagal"); 
+        } finally { 
+            icon.classList.remove("spinning");
+        }
     }
 
     function initAutocomplete() {
         setupAutocomplete(document.getElementById("name"), document.getElementById("nameList"), nameData);
-        document.querySelectorAll(".item").forEach(input => {
-            setupAutocomplete(input, input.parentNode.querySelector(".autocomplete-list"), itemData, true);
+        document.querySelectorAll(".item").forEach(el => {
+            setupAutocomplete(el, el.nextElementSibling, itemData, true);
         });
     }
 
-    function setupAutocomplete(input, box, data, isItem=false) {
-        input.addEventListener("input", () => {
+    function setupAutocomplete(input, box, data, isItem = false) {
+        input.onfocus = () => input.dispatchEvent(new Event('input'));
+        input.oninput = () => {
             const val = input.value.trim().toLowerCase();
-            if (!val) { box.style.display = "none"; return; }
-            const match = data.filter(d => {
-                if (!d.toLowerCase().includes(val)) return false;
-                if (isItem && !gaMode && (itemStock[d] || 0) <= 0) return false;
-                return true;
-            }).slice(0, 12);
-            if (!match.length) { box.style.display = "none"; return; }
-            box.innerHTML = match.map(m => `<div class="autocomplete-item">${m}</div>`).join('');
-            box.style.display = "block";
-            box.querySelectorAll(".autocomplete-item").forEach(div => {
-                div.onclick = () => { input.value = div.textContent; box.style.display = "none"; };
-            });
-        });
+            const matches = data.filter(d => d.toLowerCase().includes(val)).slice(0, 10);
+            
+            if (matches.length > 0) {
+                box.innerHTML = matches.map(m => {
+                    const stock = isItem ? `<span class="stock-tag">Stok: ${itemStock[m] || 0}</span>` : '';
+                    return `<div class="autocomplete-item">${m}${stock}</div>`;
+                }).join('');
+                box.style.display = "block";
+                
+                box.querySelectorAll(".autocomplete-item").forEach(item => {
+                    item.onclick = () => {
+                        input.value = item.childNodes[0].textContent;
+                        box.style.display = "none";
+                        // Auto focus ke Qty setelah pilih item
+                        if(isItem) input.closest('.row-top').querySelector('.qty').focus();
+                    };
+                });
+            } else {
+                box.style.display = "none";
+            }
+        };
     }
 
-    async function handleSubmit(mode) {
+    // Submit Logic
+    async function doSubmit(mode) {
         const name = document.getElementById("name").value.trim();
-        if (!nameData.includes(name)) return showToast("⚠️ Pilih Nama!");
-        const items = [...document.querySelectorAll(".item-row")].map(row => ({
-            item: row.querySelector(".item").value.trim(),
-            qty: parseInt(row.querySelector(".qty").value),
-            desc: row.querySelector(".desc").value.trim()
-        })).filter(it => it.item && it.qty);
-        if (!items.length) return showToast("⚠️ Isi Item!");
-        if (mode === "out") { for (let it of items) { if ((itemStock[it.item] || 0) < it.qty) return showToast(`⚠️ Stok ${it.item} Kurang!`); } }
-        
+        if (!nameData.includes(name)) return showToast("⚠️ Pilih nama valid!");
+
+        const rows = document.querySelectorAll(".item-row");
+        const items = [];
+        let valid = true;
+
+        rows.forEach(row => {
+            const item = row.querySelector(".item").value.trim();
+            const qty = parseInt(row.querySelector(".qty").value);
+            const desc = row.querySelector(".desc").value.trim();
+
+            if (item && qty > 0) {
+                if (mode === "out" && (itemStock[item] || 0) < qty) {
+                    showToast(`⚠️ Stok ${item} tidak cukup!`);
+                    valid = false;
+                }
+                items.push({ item, qty, desc });
+            }
+        });
+
+        if (!valid || items.length === 0) return;
+
         document.getElementById("loaderOverlay").style.display = "flex";
-        
-        const body = new URLSearchParams();
-        body.append('name', name); body.append('mode', mode); body.append('items', JSON.stringify(items));
-        body.append('date', new Date().toLocaleDateString('id-ID'));
+        const body = new URLSearchParams({
+            name, mode, 
+            items: JSON.stringify(items),
+            date: new Date().toISOString()
+        });
+
         try {
-            const resp = await fetch(scriptURL, { method: 'POST', body: body });
-            const res = await resp.json();
-            if (res.result === "success") { showSuccessPopup(mode, items); document.getElementById("myForm").reset(); fetchDataAndUpdateUI(false); }
-            else { showToast("❌ " + res.error); }
-        } catch (e) { showToast("❌ Koneksi Gagal"); }
-        finally { document.getElementById("loaderOverlay").style.display = "none"; }
+            const res = await fetch(scriptURL, { method: 'POST', body });
+            const data = await res.json();
+            if (data.result === "success") {
+                showSuccess(mode, items);
+                document.getElementById("myForm").reset();
+                document.querySelectorAll(".item-row:not(:first-child)").forEach(r => r.remove());
+                fetchDataAndUpdateUI(false);
+            }
+        } catch (e) {
+            showToast("❌ Gagal mengirim data");
+        } finally {
+            document.getElementById("loaderOverlay").style.display = "none";
+        }
     }
 
-    document.addEventListener("mousedown", startPress); document.addEventListener("touchstart", startPress);
-    document.addEventListener("mouseup", cancelPress); document.addEventListener("touchend", cancelPress);
-    
-    function startPress(e) { 
-        if (e.target.classList.contains("desc")) { 
-            activeTextarea = e.target; 
-            longPressTimer = setTimeout(() => { 
-                const popupInput = document.getElementById("descPopupInput");
-                popupInput.value = activeTextarea.value; 
-                document.getElementById("descPopup").style.display = "flex"; 
-                setTimeout(() => {
-                    popupInput.focus();
-                    popupInput.setSelectionRange(popupInput.value.length, popupInput.value.length);
-                }, 100);
-            }, 600); 
-        } 
+    // UI Helpers
+    function showToast(m) {
+        const t = document.getElementById("toast");
+        t.textContent = m;
+        t.style.display = "block";
+        setTimeout(() => t.style.display = "none", 3000);
     }
-    function cancelPress() { clearTimeout(longPressTimer); }
-    function closeDescPopup() { if (activeTextarea) activeTextarea.value = document.getElementById("descPopupInput").value; document.getElementById("descPopup").style.display = "none"; }
-    
-    function showToast(m) { 
-        const t = document.getElementById("popupToast"); t.textContent = m; t.style.display = "block"; 
-        setTimeout(() => t.style.display="none", 2500); 
+
+    function showSuccess(mode, items) {
+        const list = items.map(i => `<div>• ${i.item} <b style="float:right">${i.qty}</b></div>`).join('');
+        document.getElementById("successItems").innerHTML = list;
+        document.getElementById("successTitle").textContent = mode === 'in' ? 'Barang Masuk!' : 'Barang Keluar!';
+        document.getElementById("successPopup").style.display = "flex";
     }
-    
-    function showSuccessPopup(m, its) { 
-        document.getElementById("successMode").textContent = m.toUpperCase(); 
-        document.getElementById("successItems").innerHTML = its.map(i => `• ${i.item} = ${i.qty}`).join('<br>'); 
-        document.getElementById("successPopup").style.display = "flex"; 
-    }
-    function closeSuccessPopup() { document.getElementById("successPopup").style.display = "none"; }
-    
-    function toggleHistoryPopup(event) {
-        if (event) event.stopPropagation();
+
+    function toggleHistoryPopup(e) {
+        e.stopPropagation();
         const p = document.getElementById("historyPopup");
         const isVisible = p.style.display === "block";
-        
         if (!isVisible) {
             p.style.display = "block";
-            document.getElementById("historyList").innerHTML = lastTransactions.map(t => `<div style="font-size:0.8rem; border-bottom:1px solid #eee; padding:8px; background:#f3f4f6; margin-bottom:5px; border-radius:5px;"><b>${t[0]}</b> <span style="color:${t[1]==='in'?'#10b981':'#ef4444'}">${t[1].toUpperCase()}</span> ${t[2]}</div>`).join('');
+            document.getElementById("historyList").innerHTML = lastTransactions.map(t => `
+                <div style="padding:10px; border-bottom:1px solid #f1f5f9; font-size:12px;">
+                    <div style="display:flex; justify-content:space-between">
+                        <b>${t[0]}</b>
+                        <span style="color:${t[1]=='in'?'var(--success)':'var(--danger)'}">${t[1].toUpperCase()}</span>
+                    </div>
+                    <div style="color:var(--gray)">${t[2]}</div>
+                </div>
+            `).join('');
         } else {
             p.style.display = "none";
         }
     }
 
-    document.addEventListener("click", function(event) {
-        const historyPopup = document.getElementById("historyPopup");
-        const historyBtn = document.getElementById("historyBtn");
-
-        if (historyPopup.style.display === "block" && 
-            !historyPopup.contains(event.target) && 
-            !historyBtn.contains(event.target)) {
-            historyPopup.style.display = "none";
-        }
-    });
-
-    function checkPassword() { if (document.getElementById("adminPass").value === "admin123") { document.getElementById("passPopup").style.display = "none"; document.getElementById("adminPass").value = ""; handleSubmit("in"); } else showToast("❌ Salah!"); }
-    function closePassPopup() { document.getElementById("passPopup").style.display = "none"; }
-
+    // Global Events
     document.getElementById("addRow").onclick = () => {
         const container = document.getElementById("itemContainer");
-        if (container.children.length >= 5) return showToast("⚠️ Maksimal 5");
-        const firstRow = container.children[0];
-        const clone = firstRow.cloneNode(true);
-        clone.querySelectorAll("input, textarea").forEach(i => { i.value = ""; i.style.height = "42px"; });
-        container.appendChild(clone); initAutocomplete();
+        if (container.children.length >= 5) return showToast("Maksimal 5 baris");
+        const clone = container.children[0].cloneNode(true);
+        clone.querySelectorAll("input, textarea").forEach(i => i.value = "");
+        clone.querySelector(".delete-row").style.display = "flex";
+        container.appendChild(clone);
+        initAutocomplete();
     };
-    document.addEventListener("click", e => { if (e.target.classList.contains("delete-row")) e.target.closest(".item-row").remove(); });
-    document.getElementById("titleBtn").onclick = () => { gaMode = !gaMode; showToast(gaMode ? "GA Mode ON" : "GA Mode OFF"); document.getElementById("historyBtn").style.display = gaMode ? "block" : "none"; };
+
+    document.addEventListener("click", e => {
+        if (e.target.classList.contains("delete-row")) e.target.closest(".item-row").remove();
+        if (!e.target.closest(".autocomplete-list")) document.querySelectorAll(".autocomplete-list").forEach(l => l.style.display = "none");
+        if (!e.target.closest("#historyPopup") && !e.target.closest("#historyBtn")) document.getElementById("historyPopup").style.display = "none";
+    });
+
+    document.getElementById("titleBtn").onclick = () => {
+        gaMode = !gaMode;
+        document.getElementById("historyBtn").style.display = gaMode ? "block" : "none";
+        showToast(gaMode ? "Admin Mode Aktif" : "User Mode Aktif");
+    };
+
     document.getElementById("btnIn").onclick = () => document.getElementById("passPopup").style.display = "flex";
-    document.getElementById("btnOut").onclick = () => handleSubmit("out");
+    document.getElementById("btnOut").onclick = () => doSubmit("out");
+    
+    function checkPassword() {
+        if (document.getElementById("adminPass").value === "admin123") {
+            closePassPopup();
+            doSubmit("in");
+        } else showToast("❌ Password Salah");
+    }
+
+    function closePassPopup() { document.getElementById("passPopup").style.display = "none"; document.getElementById("adminPass").value = ""; }
+    function closeSuccessPopup() { document.getElementById("successPopup").style.display = "none"; }
+
     window.onload = () => fetchDataAndUpdateUI(true);
 </script>
+
 </body>
 </html>
