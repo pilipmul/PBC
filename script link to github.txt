@@ -1,0 +1,171 @@
+// =========================================
+// PENGATURAN STATUS MAINTENANCE
+// =========================================
+var IS_MAINTENANCE = true; 
+
+// --- FUNGSI UTAMA UNTUK MENGIRIM DATA KE GITHUB ---
+function doGet(e) {
+  // Cek jika permintaan meminta data dropdown
+  if (e.parameter.action === 'getDropdownData') {
+    if (IS_MAINTENANCE) {
+      return responseJSON({ status: "maintenance" });
+    }
+    const data = getDropdownData();
+    return responseJSON(data);
+  }
+
+  // Fallback jika dibuka langsung (Opsional: Tetap tampilkan Index jika mau)
+  return HtmlService.createHtmlOutput('Link ini akan kadaluarsa pada 17 Januari 2026, 10:00 wib, silahkan gunakan link terbaru : <a href="https://pilipmul.github.io/PBC/" target="_blank">https://pilipmul.github.io/PBC/</a>');
+}
+
+// --- FUNGSI UNTUK MENERIMA SUBMIT DARI GITHUB ---
+function doPost(e) {
+  try {
+    if (IS_MAINTENANCE) {
+      return responseJSON({ result: "error", error: "System is under maintenance" });
+    }
+
+    // Mengambil data dari payload
+    const name = e.parameter.name;
+    const mode = e.parameter.mode;
+    const items = JSON.parse(e.parameter.items);
+    const date = e.parameter.date;
+
+    const formData = {
+      name: name,
+      mode: mode,
+      items: items,
+      date: date
+    };
+
+    const result = submitForm(formData);
+    
+    // Jika result mengandung emoji sukses, kirim success ke GitHub
+    if (result.includes("✅")) {
+      return responseJSON({ result: "success", message: result });
+    } else {
+      return responseJSON({ result: "error", error: result });
+    }
+  } catch (err) {
+    return responseJSON({ result: "error", error: err.toString() });
+  }
+}
+
+// Helper untuk format JSON agar tidak kena CORS
+function responseJSON(data) {
+  return ContentService.createTextOutput(JSON.stringify(data))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+// --- Ambil Data Dropdown (Tetap Sama, Tidak Perlu Diubah) ---
+function getDropdownData() {
+  const ss = SpreadsheetApp.openById("1nd-6JfQSgeXeELyyheLT1bz_MCvxUqzNA9cR6Z86J-w");
+  const employeeSheet = ss.getSheetByName("Employee");
+  const summarySheet = ss.getSheetByName("Summary");
+  const logSheet = ss.getSheetByName("Log");
+
+  const names = employeeSheet.getRange("B2:B").getValues().flat().filter(String);
+  const data = summarySheet.getDataRange().getValues();
+  const header = data[0];
+  const itemIndex = 1; 
+  const balIndex = header.indexOf("Balance");
+
+  const items = [];
+  const stocks = {}; 
+
+  for (let i = 1; i < data.length; i++) {
+    const itemName = data[i][itemIndex];
+    if (itemName && String(itemName).trim() !== "") {
+      items.push(itemName);
+      let stockValue = data[i][balIndex];
+      stockValue = (stockValue === "" || stockValue === null || isNaN(stockValue)) ? 0 : Number(stockValue);
+      stocks[itemName] = stockValue;
+    }
+  }
+
+  const transactions = [];
+  try {
+    const lastRow = logSheet.getLastRow();
+    if (lastRow > 1) { 
+      const startRow = Math.max(2, lastRow - 4); 
+      const range = logSheet.getRange(startRow, 2, lastRow - startRow + 1, 3);
+      const logData = range.getValues(); 
+      
+      logData.reverse().forEach(row => {
+        const item = row[0];
+        const qtyIn = row[1] || "";
+        const qtyOut = row[2] || "";
+        if (item && (qtyIn || qtyOut)) {
+          let mode = qtyIn ? "in" : "out";
+          let qty = qtyIn || qtyOut;
+          transactions.push([item, mode, Number(qty)]);
+        }
+      });
+    }
+  } catch(e) {
+    Logger.log("Error Log: " + e.toString());
+  }
+
+  return { names, items, stocks, transactions }; 
+}
+
+// --- Proses submit dari form (Tetap Sama) ---
+function submitForm(formData) {
+  const ss = SpreadsheetApp.openById("1nd-6JfQSgeXeELyyheLT1bz_MCvxUqzNA9cR6Z86J-w");
+  const logSheet = ss.getSheetByName("Log");
+  const summarySheet = ss.getSheetByName("Summary");
+
+  const data = summarySheet.getDataRange().getValues();
+  const header = data[0];
+  const itemIndex = 1;
+  const balIndex = header.indexOf("Balance");
+
+  const rowsToAdd = [];
+
+  for (const entry of formData.items) {
+    const found = data.find(r => r[itemIndex] === entry.item);
+    const available = found ? Number(found[balIndex]) : 0;
+
+    if (formData.mode === "out" && entry.qty > available) {
+      return `❌ Item ${entry.item} melebihi stok tersedia (${available})!`;
+    }
+
+    const inValue = formData.mode === "in" ? entry.qty : "";
+    const outValue = formData.mode === "out" ? entry.qty : "";
+
+    rowsToAdd.push([
+      formData.name,   // A
+      entry.item,      // B
+      inValue,         // C
+      outValue,        // D
+      formData.date,   // E
+      entry.desc,      // F
+    ]);
+  }
+
+  if (!rowsToAdd.length) return "❌ Tidak ada data yang valid dikirim.";
+  
+  const numColumns = 9;
+  const dataToInsert = rowsToAdd.map(row => [...row, "", "", ""]);
+  
+  const startRow = logSheet.getLastRow() + 1;
+  logSheet.getRange(startRow, 1, rowsToAdd.length, numColumns).setValues(dataToInsert);
+
+  autofillColumnH_Log();
+  return `✅ ${rowsToAdd.length} data ${formData.mode.toUpperCase()} berhasil disimpan!`;
+}
+
+// --- Fungsi Autofill (Tetap Sama) ---
+function autofillColumnH_Log() {
+  const ss = SpreadsheetApp.openById("1nd-6JfQSgeXeELyyheLT1bz_MCvxUqzNA9cR6Z86J-w");
+  const sheet = ss.getSheetByName("Log");
+  if (!sheet) return;
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return;
+  const lastFilledRowH = sheet.getRange(sheet.getMaxRows(), 8).getNextDataCell(SpreadsheetApp.Direction.UP).getRow();
+  if (lastFilledRowH >= lastRow) return;
+  const sourceRange = sheet.getRange(lastFilledRowH, 8);
+  const numRowsToFill = lastRow - lastFilledRowH;
+  const targetRange = sheet.getRange(lastFilledRowH + 1, 8, numRowsToFill, 1);
+  sourceRange.copyTo(targetRange, SpreadsheetApp.CopyPasteType.PASTE_NORMAL, false);
+}
