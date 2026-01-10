@@ -1,0 +1,167 @@
+// =========================================
+// PENGATURAN STATUS MAINTENANCE
+// =========================================
+var IS_MAINTENANCE = false; // Ubah ke 'true' untuk mode maintenance, 'false' untuk normal
+// =========================================
+
+function doGet() {
+  // Cek status maintenance
+  if (IS_MAINTENANCE) {
+    return HtmlService.createTemplateFromFile('Maintenance')
+      .evaluate()
+      .addMetaTag('viewport', 'width=device-width, initial-scale=1')
+      .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
+      .setTitle("Under Maintenance - PBC SyncFlow");
+  }
+
+  // Jika tidak maintenance, tampilkan Index seperti biasa
+  const output = HtmlService.createHtmlOutputFromFile("Index")
+    .addMetaTag('viewport', 'width=device-width, initial-scale=1')
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
+    .setTitle("PBC SyncFlow");
+  
+  output.setFaviconUrl('https://raw.githubusercontent.com/pilipmul/PBC-cek-Piutang/main/logo%20citanusa.png');
+
+  return output;
+}
+
+// --- Ambil Data Dropdown ---
+function getDropdownData() {
+  const ss = SpreadsheetApp.openById("1nd-6JfQSgeXeELyyheLT1bz_MCvxUqzNA9cR6Z86J-w");
+  const employeeSheet = ss.getSheetByName("Employee");
+  const summarySheet = ss.getSheetByName("Summary");
+  const logSheet = ss.getSheetByName("Log");
+
+  const names = employeeSheet.getRange("B2:B").getValues().flat().filter(String);
+  const data = summarySheet.getDataRange().getValues();
+  const header = data[0];
+  const itemIndex = 1; 
+  const balIndex = header.indexOf("Balance");
+
+  const items = [];
+  const stocks = {}; 
+
+  for (let i = 1; i < data.length; i++) {
+    const itemName = data[i][itemIndex];
+    if (itemName && String(itemName).trim() !== "") {
+      items.push(itemName);
+      let stockValue = data[i][balIndex];
+      stockValue = (stockValue === "" || stockValue === null || isNaN(stockValue)) ? 0 : Number(stockValue);
+      stocks[itemName] = stockValue;
+    }
+  }
+
+  const transactions = [];
+  try {
+    const lastRow = logSheet.getLastRow();
+    if (lastRow > 1) { 
+      const startRow = Math.max(2, lastRow - 4); 
+      const range = logSheet.getRange(startRow, 2, lastRow - startRow + 1, 3);
+      const logData = range.getValues(); 
+      
+      logData.reverse().forEach(row => {
+        const item = row[0];
+        const qtyIn = row[1];
+        const qtyOut = row[2];
+        if (item && (qtyIn || qtyOut)) {
+          let mode = qtyIn ? "in" : "out";
+          let qty = qtyIn || qtyOut;
+          transactions.push([item, mode, Number(qty)]);
+        }
+      });
+    }
+  } catch(e) {
+    Logger.log("Gagal mengambil riwayat transaksi: " + e.toString());
+  }
+
+  return { names, items, stocks, transactions }; 
+}
+
+// --- Ambil stok berdasarkan item ---
+function getStockForItem(itemName) {
+  const ss = SpreadsheetApp.openById("1nd-6JfQSgeXeELyyheLT1bz_MCvxUqzNA9cR6Z86J-w");
+  const summarySheet = ss.getSheetByName("Summary");
+  const data = summarySheet.getDataRange().getValues();
+  const header = data[0];
+  const itemIndex = 1;
+  const balIndex = header.indexOf("Balance");
+  const found = data.find(r => r[itemIndex] === itemName);
+  return found ? Number(found[balIndex]) : 0;
+}
+
+// --- Proses submit dari form ---
+function submitForm(formData) {
+  const ss = SpreadsheetApp.openById("1nd-6JfQSgeXeELyyheLT1bz_MCvxUqzNA9cR6Z86J-w");
+  const logSheet = ss.getSheetByName("Log");
+  const summarySheet = ss.getSheetByName("Summary");
+
+  const data = summarySheet.getDataRange().getValues();
+  const header = data[0];
+  const itemIndex = 1;
+  const balIndex = header.indexOf("Balance");
+
+  const rowsToAdd = [];
+
+  for (const entry of formData.items) {
+    const found = data.find(r => r[itemIndex] === entry.item);
+    const available = found ? Number(found[balIndex]) : 0;
+
+    if (formData.mode === "out" && entry.qty > available) {
+      return `❌ Item ${entry.item} melebihi stok tersedia (${available})!`;
+    }
+
+    const inValue = formData.mode === "in" ? entry.qty : "";
+    const outValue = formData.mode === "out" ? entry.qty : "";
+
+    rowsToAdd.push([
+      formData.name,   // A
+      entry.item,      // B
+      inValue,         // C
+      outValue,        // D
+      formData.date,   // E
+      entry.desc,      // F
+    ]);
+  }
+
+  if (!rowsToAdd.length) return "❌ Tidak ada data yang valid dikirim.";
+  
+  const numColumns = 9;
+  const dataToInsert = rowsToAdd.map(row => {
+    return [...row, "", "", ""]; 
+  });
+  
+  const startRow = logSheet.getLastRow() + 1;
+  logSheet.getRange(startRow, 1, rowsToAdd.length, numColumns).setValues(dataToInsert);
+
+  // Panggil fungsi autofill yang sudah diperbaiki
+  autofillColumnH_Log();
+
+  return `✅ ${rowsToAdd.length} data ${formData.mode.toUpperCase()} berhasil disimpan!`;
+}
+
+// --- Fungsi Autofill Kolom H (VERSI PERBAIKAN: ANTI-FILTER ERROR) ---
+function autofillColumnH_Log() {
+  const ss = SpreadsheetApp.openById("1nd-6JfQSgeXeELyyheLT1bz_MCvxUqzNA9cR6Z86J-w");
+  const sheet = ss.getSheetByName("Log");
+  if (!sheet) return;
+
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return;
+
+  // 1. Cari baris terakhir di kolom H yang sudah berisi data/rumus
+  // Menggunakan direction UP dari baris terbawah sheet lebih cepat dan akurat
+  const lastFilledRowH = sheet.getRange(sheet.getMaxRows(), 8).getNextDataCell(SpreadsheetApp.Direction.UP).getRow();
+
+  // Jika kolom H sudah terisi penuh sampai baris terakhir data (lastRow), berhenti
+  if (lastFilledRowH >= lastRow) return;
+
+  // 2. Tentukan range sumber (sel H terakhir yg ada isinya)
+  const sourceRange = sheet.getRange(lastFilledRowH, 8);
+  
+  // 3. Tentukan range tujuan (sel H kosong di bawahnya sampai baris data terakhir)
+  const numRowsToFill = lastRow - lastFilledRowH;
+  const targetRange = sheet.getRange(lastFilledRowH + 1, 8, numRowsToFill, 1);
+
+  // 4. Lakukan CopyPaste (Ini kuncinya: copyTo tidak peduli baris hidden/filter)
+  sourceRange.copyTo(targetRange, SpreadsheetApp.CopyPasteType.PASTE_NORMAL, false);
+}
