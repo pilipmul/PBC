@@ -21,7 +21,17 @@
             position: relative; text-align: center; margin-bottom: 20px;
         }
         
-        #titleBtn { width: 100%; max-width: 280px; cursor: pointer; transition: transform 0.1s ease, opacity 0.2s; user-select: none; }
+        #titleBtn { 
+    width: 100%; 
+    max-width: 280px; 
+    cursor: pointer; 
+    transition: transform 0.1s ease, opacity 0.2s; 
+    
+    /* Tambahkan ini */
+    user-select: none; 
+    -webkit-user-drag: none; 
+    -webkit-touch-callout: none; /* Mencegah menu konteks di mobile (iOS) */
+}
         #titleBtn:active { transform: scale(0.95); opacity: 0.8; }
 
         #nameWrapper { position: relative; padding-top: 7px; border-top: 1px solid #1877f2; padding-bottom: 7px; border-bottom: 1px solid #1877f2; }
@@ -132,7 +142,11 @@
     </div>
     
     <div style="text-align: center; margin: 20px 0;">
-        <img id="titleBtn" src="https://raw.githubusercontent.com/pilipmul/PBC-cek-Piutang/c917d70c8d2a8f1630b8dd1400a2d13c2aa55d65/Title%20PBC%20B.png" alt="PBC SyncFlow">
+        <img id="titleBtn" 
+     src="https://raw.githubusercontent.com/pilipmul/PBC-cek-Piutang/c917d70c8d2a8f1630b8dd1400a2d13c2aa55d65/Title%20PBC%20B.png" 
+     alt="PBC SyncFlow" 
+     oncontextmenu="return false;" 
+     draggable="false">
     </div>
     
     <form id="myForm">
