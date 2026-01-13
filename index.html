@@ -93,10 +93,10 @@
         .modal-btn { width: fit-content; min-width: 100px; margin: 0 auto; display: block; padding: 8px 20px; }
         #successMode { background: #facc15; font-weight: 700; padding: 4px 16px; border-radius: 20px; margin-bottom: 15px; display: inline-block; color: #333; }
         .popup-toast { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(33, 33, 33, 0.95); color: #fff; padding: 12px 24px; border-radius: 12px; display: none; z-index: 7000; width: fit-content; max-width: 85%; white-space: nowrap; box-shadow: 0 4px 15px rgba(0,0,0,0.4); pointer-events: none; font-weight: 600; }
-        .header-actions { position: absolute; top: 10px; left: 20px; display: flex; gap: 8px; z-index: 10; }
+        .header-actions { position: absolute; top: 5px; left: 8px; display: flex; gap: 8px; z-index: 10; align-items: center; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .spinning { animation: spin 1s linear infinite; }
-        #historyPopup { position: absolute; top: 40px; left: 20px; background-color: #ffffff !important; border: 2px solid #1877f2; border-radius: 8px; width: 280px; max-height: 350px; overflow-y: auto; padding: 12px; display: none; text-align: left; box-shadow: 0 8px 24px rgba(0,0,0,0.4); z-index: 5000; }
+        #historyPopup { position: absolute; top: 25px; left: 30px; background-color: #ffffff !important; border: 2px solid #1877f2; border-radius: 8px; width: 280px; max-height: 350px; overflow-y: auto; padding: 12px; display: none; text-align: left; box-shadow: 0 8px 24px rgba(0,0,0,0.4); z-index: 5000; }
         #loaderOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.4); display: none; justify-content: center; align-items: center; z-index: 9999; }
         .loader { border: 6px solid #f3f3f3; border-top: 6px solid #1877f2; border-radius: 50%; width: 50px; height: 50px; animation: spin 0.8s linear infinite; }
         #descPopupInput { width: 100% !important; height: 150px !important; border: 1px solid #1877f2; margin-bottom: 15px; border-radius: 12px; text-align: center; padding: 15px; resize: vertical; display: flex; align-items: center; justify-content: center; background-color: #f9f9f9; line-height: 1.5; }
@@ -109,13 +109,17 @@
     <div id="popupToast" class="popup-toast"></div>
 
     <div class="header-actions">
-        <button id="refreshBtn" type="button" onclick="fetchDataAndUpdateUI(false)" style="background:none; width:auto; padding:0;">
-            <svg id="refreshIcon" xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#1877f2"><path d="M480-160q-134 0-227-93t-93-227q0-134 93-227t227-93q69 0 132 28.5T720-690v-110h80v280H520v-80h168q-32-56-87.5-88T480-720q-100 0-170 70t-70 170q0 100 70 170t170 70q77 0 139-44t87-116h84q-28 106-114 173t-196 67Z"/></svg>
-        </button>
-        <button id="historyBtn" type="button" onclick="toggleHistoryPopup(event)" style="display:none; background:none; color:#1877f2; width:auto; font-weight:bold;">~5</button>
-    </div>
+    <button id="refreshBtn" type="button" onclick="fetchDataAndUpdateUI(false)" style="background:none; border:none; width:auto; padding:0; display:flex; align-items:center;">
+        <svg id="refreshIcon" xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#1877f2">
+            <path d="M480-160q-134 0-227-93t-93-227q0-134 93-227t227-93q69 0 132 28.5T720-690v-110h80v280H520v-80h168q-32-56-87.5-88T480-720q-100 0-170 70t-70 170q0 100 70 170t170 70q77 0 139-44t87-116h84q-28 106-114 173t-196 67Z"/>
+        </svg>
+    </button>
+    <button id="historyBtn" type="button" onclick="toggleHistoryPopup(event)" style="display:none; background:none; border:none; color:#1877f2; width:auto; font-weight:bold; font-size:0.8rem; padding:0; cursor:pointer;">
+        ~5
+    </button>
+</div>
     
-    <div id="historyPopup"><h4 style="margin:0 0 10px 0; text-align:center; color:#1877f2;">5 Last Trx</h4><div id="historyList"></div></div>
+    <div id="historyPopup"><h4 style="margin:0 0 10px 0; text-align:center; color:#1877f2;">~5 Trx</h4><div id="historyList"></div></div>
     
     <div style="text-align: center; margin: 20px 0;">
         <img id="titleBtn" src="https://raw.githubusercontent.com/pilipmul/PBC-cek-Piutang/c917d70c8d2a8f1630b8dd1400a2d13c2aa55d65/Title%20PBC%20B.png" alt="PBC SyncFlow" oncontextmenu="return false;" draggable="false">
@@ -160,41 +164,88 @@
     let nameData = [], itemData = [], itemStock = {}, lastTransactions = [], gaMode = false, activeTextarea = null, longPressTimer;
 
     async function fetchDataAndUpdateUI(isInitialLoad = true) {
-        const icon = document.getElementById("refreshIcon");
-        icon.classList.add("spinning");
-        try {
-            const resp = await fetch(`${scriptURL}?action=getDropdownData`);
-            const data = await resp.json();
-            nameData = data.names; itemData = data.items; itemStock = data.stocks; lastTransactions = data.transactions || [];
-            if (isInitialLoad) initAutocomplete();
-        } catch (e) { showToast("❌ Gagal Sinkronisasi!"); }
-        finally { setTimeout(() => icon.classList.remove("spinning"), 600); }
+    const icon = document.getElementById("refreshIcon");
+    if(icon) icon.classList.add("spinning");
+    
+    try {
+        const resp = await fetch(`${scriptURL}?action=getDropdownData`);
+        const data = await resp.json();
+        
+        // Update data global dengan data terbaru dari Google Sheets
+        nameData = data.names || []; 
+        itemData = data.items || []; 
+        itemStock = data.stocks || {}; 
+        lastTransactions = data.transactions || [];
+        
+        // Jalankan ulang inisialisasi autocomplete
+        initAutocomplete();
+        
+    } catch (e) { 
+        console.error(e);
+        showToast("❌ Gagal Sinkronisasi!"); 
+    } finally { 
+        if(icon) setTimeout(() => icon.classList.remove("spinning"), 600); 
     }
+}
 
-    function initAutocomplete() {
-        setupAutocomplete(document.getElementById("name"), document.getElementById("nameList"), nameData);
-        document.querySelectorAll(".item").forEach(input => {
-            setupAutocomplete(input, input.parentNode.querySelector(".autocomplete-list"), itemData, true);
-        });
-    }
+function initAutocomplete() {
+    // 1. Refresh Autocomplete Nama
+    const nameInput = document.getElementById("name");
+    const nameList = document.getElementById("nameList");
+    
+    // Pastikan box list dibersihkan dan disembunyikan dulu
+    nameList.innerHTML = "";
+    nameList.style.display = "none";
+    
+    // Pasang ulang autocomplete dengan data terbaru (nameData)
+    setupAutocomplete(nameInput, nameList, nameData);
 
-    function setupAutocomplete(input, box, data, isItem=false) {
-        input.addEventListener("input", () => {
-            const val = input.value.trim().toLowerCase();
-            if (!val) { box.style.display = "none"; return; }
-            const match = data.filter(d => {
-                if (!d.toLowerCase().includes(val)) return false;
-                if (isItem && !gaMode && (itemStock[d] || 0) <= 0) return false;
-                return true;
-            }).slice(0, 12);
-            if (!match.length) { box.style.display = "none"; return; }
-            box.innerHTML = match.map(m => `<div class="autocomplete-item">${m}</div>`).join('');
-            box.style.display = "block";
-            box.querySelectorAll(".autocomplete-item").forEach(div => {
-                div.onclick = () => { input.value = div.textContent; box.style.display = "none"; };
-            });
+    // 2. Refresh Autocomplete pada semua baris Item yang ada
+    document.querySelectorAll(".item-row").forEach(row => {
+        const itemInput = row.querySelector(".item");
+        const itemBox = row.querySelector(".autocomplete-list");
+        
+        itemBox.innerHTML = "";
+        itemBox.style.display = "none";
+        
+        setupAutocomplete(itemInput, itemBox, itemData, true);
+    });
+}
+
+// Pastikan fungsi setupAutocomplete tidak menumpuk listener
+function setupAutocomplete(input, box, data, isItem=false) {
+    if(!input || !box) return;
+
+    // Hapus listener lama dengan cara mengganti elemen (clone) 
+    // hanya jika benar-benar diperlukan, atau gunakan variabel global data.
+    // Cara termudah: hapus event listener lama dengan clone
+    const newInput = input.cloneNode(true);
+    input.parentNode.replaceChild(newInput, input);
+
+    newInput.addEventListener("input", () => {
+        const val = newInput.value.trim().toLowerCase();
+        if (!val) { box.style.display = "none"; return; }
+        
+        const match = data.filter(d => {
+            if (!d.toLowerCase().includes(val)) return false;
+            // Jika mode OUT dan bukan GA mode, sembunyikan jika stok 0
+            if (isItem && !gaMode && (itemStock[d] || 0) <= 0) return false;
+            return true;
+        }).slice(0, 12);
+        
+        if (!match.length) { box.style.display = "none"; return; }
+        
+        box.innerHTML = match.map(m => `<div class="autocomplete-item">${m}</div>`).join('');
+        box.style.display = "block";
+        
+        box.querySelectorAll(".autocomplete-item").forEach(div => {
+            div.onclick = () => { 
+                newInput.value = div.textContent; 
+                box.style.display = "none"; 
+            };
         });
-    }
+    });
+}
 
     async function handleSubmit(mode) {
         const name = document.getElementById("name").value.trim();
