@@ -22,10 +22,9 @@
         }
         
         #titleBtn { 
-            width: 100%; max-width: 280px; cursor: pointer; transition: transform 0.1s ease, opacity 0.2s; 
+            width: 100%; max-width: 280px; transition: opacity 0.2s; 
             user-select: none; -webkit-user-drag: none; -webkit-touch-callout: none;
         }
-        #titleBtn:active { transform: scale(0.95); opacity: 0.8; }
 
         #nameWrapper { position: relative; padding-top: 7px; border-top: 1px solid #1877f2; padding-bottom: 7px; border-bottom: 1px solid #1877f2; }
         
@@ -36,10 +35,8 @@
         }
         input:focus, textarea:focus { outline: none; }
 
-        /* --- PERBAIKAN COLUMN & QTY CENTER --- */
         .row-3col { 
             display: grid; 
-            /* Pembagian kolom simetris: Item dan Notes seimbang (38%), Qty tepat di tengah (24%) */
             grid-template-columns: 40% 20% 40%; 
             gap: 0; 
             align-items: center; 
@@ -47,14 +44,36 @@
             padding-bottom: 10px; padding-top: 5px; position: relative; 
         }
 
-        input.qty { 
+        .qty-wrapper {
+            position: relative;
+            display: grid;
+            place-items: center;
             border-left: 1px solid #1877f2; 
-            border-right: 1px solid #1877f2; 
-            padding: 10px 0; /* Tanpa padding samping agar teks murni di tengah */
-            -moz-appearance: textfield;
+            border-right: 1px solid #1877f2;
+            height: 42px;
         }
 
-        /* Menghilangkan panah spinner input number yang mengganggu alignment */
+        .stock-overlay {
+            grid-area: 1/1;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: rgba(220, 38, 38, 0.6); /* Dipertebal menjadi 60% */
+            pointer-events: none;
+            display: none;
+            z-index: 1;
+        }
+
+        input.qty { 
+            grid-area: 1/1;
+            position: relative;
+            z-index: 2;
+            background: transparent !important;
+            padding: 10px 0;
+            -moz-appearance: textfield;
+        }
+        
+        input.qty.hide-placeholder::placeholder { color: transparent; }
+
         input.qty::-webkit-outer-spin-button,
         input.qty::-webkit-inner-spin-button {
             -webkit-appearance: none;
@@ -65,7 +84,6 @@
         
         .btn-group { display: flex; gap: 8px; margin-top: 10px; justify-content: center; position: relative; align-items: center; }
         
-        /* Tombol Tambah Baris disesuaikan agar posisinya center mengikuti kolom Qty */
         .add-row { 
             background-color: transparent; border: none; width: auto; 
             padding: 8px; flex: none; display: flex; justify-content: center; align-items: center;
@@ -93,7 +111,32 @@
         .modal-btn { width: fit-content; min-width: 100px; margin: 0 auto; display: block; padding: 8px 20px; }
         #successMode { background: #facc15; font-weight: 700; padding: 4px 16px; border-radius: 20px; margin-bottom: 15px; display: inline-block; color: #333; }
         .popup-toast { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(33, 33, 33, 0.95); color: #fff; padding: 12px 24px; border-radius: 12px; display: none; z-index: 7000; width: fit-content; max-width: 85%; white-space: nowrap; box-shadow: 0 4px 15px rgba(0,0,0,0.4); pointer-events: none; font-weight: 600; }
-        .header-actions { position: absolute; top: 5px; left: 8px; display: flex; gap: 8px; z-index: 10; align-items: center; }
+        
+        .header-actions { position: absolute; top: 0; left: 0; right: 0; height: 40px; pointer-events: none; z-index: 10; display: flex; align-items: center; }
+        #refreshBtn { position: absolute; top: 10px; left: 10px; pointer-events: auto; }
+        #hamburgerBtn { position: absolute; top: 10px; right: 10px; pointer-events: auto; }
+        
+        /* Gaya untuk teks Indikator GA */
+        #gaIndicator { 
+            position: absolute; top: 10px; left: 35px; 
+            color: #1877f2; font-weight: 800; font-size: 14px; 
+            display: none; pointer-events: none; line-height: 20px;
+        }
+
+        .dropdown-menu { 
+            position: absolute; top: 35px; right: 10px; 
+            background: white; border: 1px solid #1877f2; 
+            border-radius: 8px; display: none; flex-direction: column; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15); pointer-events: auto; min-width: 110px;
+        }
+        .dropdown-item { 
+            padding: 10px 15px; font-size: 0.9rem; cursor: pointer; 
+            color: #1877f2; font-weight: 600; text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        .dropdown-item:last-child { border-bottom: none; }
+        .dropdown-item:hover { background: #f0f7ff; border-radius: 8px; }
+
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .spinning { animation: spin 1s linear infinite; }
         #historyPopup { position: absolute; top: 25px; left: 30px; background-color: #ffffff !important; border: 2px solid #1877f2; border-radius: 8px; width: 280px; max-height: 350px; overflow-y: auto; padding: 12px; display: none; text-align: left; box-shadow: 0 8px 24px rgba(0,0,0,0.4); z-index: 5000; }
@@ -109,20 +152,26 @@
     <div id="popupToast" class="popup-toast"></div>
 
     <div class="header-actions">
-    <button id="refreshBtn" type="button" onclick="fetchDataAndUpdateUI(false)" style="background:none; border:none; width:auto; padding:0; display:flex; align-items:center;">
-        <svg id="refreshIcon" xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#1877f2">
-            <path d="M480-160q-134 0-227-93t-93-227q0-134 93-227t227-93q69 0 132 28.5T720-690v-110h80v280H520v-80h168q-32-56-87.5-88T480-720q-100 0-170 70t-70 170q0 100 70 170t170 70q77 0 139-44t87-116h84q-28 106-114 173t-196 67Z"/>
-        </svg>
-    </button>
-    <button id="historyBtn" type="button" onclick="toggleHistoryPopup(event)" style="display:none; background:none; border:none; color:#1877f2; width:auto; font-weight:bold; font-size:0.8rem; padding:0; cursor:pointer;">
-        ~5
-    </button>
-</div>
+        <button id="refreshBtn" type="button" onclick="fetchDataAndUpdateUI(false)" style="background:none; border:none; width:auto; padding:0; display:flex; align-items:center;">
+            <svg id="refreshIcon" xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#1877f2">
+                <path d="M480-160q-134 0-227-93t-93-227q0-134 93-227t227-93q69 0 132 28.5T720-690v-110h80v280H520v-80h168q-32-56-87.5-88T480-720q-100 0-170 70t-70 170q0 100 70 170t170 70q77 0 139-44t87-116h84q-28 106-114 173t-196 67Z"/>
+            </svg>
+        </button>
+        <div id="gaIndicator">GA</div> <button id="hamburgerBtn" type="button" onclick="toggleDropdown(event)" style="background:none; border:none; width:auto; padding:0; display:flex; align-items:center;">
+            <svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#1877f2">
+                <path d="M120-240v-80h720v80H120Zm0-200v-80h720v80H120Zm0-200v-80h720v80H120Z"/>
+            </svg>
+        </button>
+        <div id="myDropdown" class="dropdown-menu">
+            <div class="dropdown-item" onclick="toggleGAMode()">GA Mode</div>
+            <div id="btnHistoryGA" class="dropdown-item" style="display:none;" onclick="toggleHistoryPopup(event)">~5 Trx</div>
+        </div>
+    </div>
     
     <div id="historyPopup"><h4 style="margin:0 0 10px 0; text-align:center; color:#1877f2;">~5 Trx</h4><div id="historyList"></div></div>
     
     <div style="text-align: center; margin: 20px 0;">
-        <img id="titleBtn" src="https://raw.githubusercontent.com/pilipmul/PBC-cek-Piutang/c917d70c8d2a8f1630b8dd1400a2d13c2aa55d65/Title%20PBC%20B.png" alt="PBC SyncFlow" oncontextmenu="return false;" draggable="false">
+        <img id="titleBtn" src="https://raw.githubusercontent.com/pilipmul/PBC-cek-Piutang/c917d70c8d2a8f1630b8dd1400a2d13c2aa55d65/Title%20PBC%20B.png" alt="PBC SyncFlow" oncontextmenu="false" draggable="false">
     </div>
     
     <form id="myForm">
@@ -137,7 +186,10 @@
                     <input type="text" class="item" placeholder="Item" autocomplete="off" required>
                     <div class="autocomplete-list"></div>
                 </div>
-                <input type="number" class="qty" min="1" placeholder="Qty" required>
+                <div class="qty-wrapper">
+                    <span class="stock-overlay"></span>
+                    <input type="number" class="qty" min="1" placeholder="Qty" required>
+                </div>
                 <div style="position: relative;">
                     <textarea class="desc" placeholder="Notes"></textarea>
                     <button type="button" class="delete-row">×</button>
@@ -161,7 +213,42 @@
 
 <script>
     const scriptURL = 'https://script.google.com/macros/s/AKfycbzNzaOwIeHkxlp9wdeHDlCLTfqbXlS-A6yzC8c-m4KDIzT-JlBLK_5QqBc6lHXmK41GSQ/exec';
-    let nameData = [], itemData = [], itemStock = {}, lastTransactions = [], gaMode = false, activeTextarea = null, longPressTimer;
+    let nameData = [], itemData = [], itemStock = {}, lastTransactions = [], gaMode = false, activeTextarea = null, longPressTimer, passAction = "";
+
+    function toggleDropdown(e) {
+        e.stopPropagation();
+        const d = document.getElementById("myDropdown");
+        d.style.display = (d.style.display === "flex") ? "none" : "flex";
+    }
+
+    function toggleGAMode() {
+        document.getElementById("myDropdown").style.display = "none";
+        if (!gaMode) {
+            passAction = "ga";
+            document.getElementById("passPopup").style.display = "flex";
+            document.getElementById("adminPass").focus();
+        } else {
+            updateGAUI(false);
+        }
+    }
+
+    function updateGAUI(status) {
+        gaMode = status;
+        const btnHist = document.getElementById("btnHistoryGA");
+        const gaInd = document.getElementById("gaIndicator");
+        if (gaMode) {
+            showToast("GA Mode: ON (Bypass Stok)");
+            btnHist.style.display = "block";
+            gaInd.style.display = "block"; // Tampilkan tulisan GA
+        } else {
+            showToast("GA Mode: OFF");
+            btnHist.style.display = "none";
+            gaInd.style.display = "none"; // Sembunyikan tulisan GA
+            document.querySelectorAll(".stock-overlay").forEach(s => s.style.display = "none");
+            document.querySelectorAll(".qty").forEach(q => q.classList.remove("hide-placeholder"));
+        }
+        initAutocomplete();
+    }
 
     async function fetchDataAndUpdateUI(isInitialLoad = true) {
     const icon = document.getElementById("refreshIcon");
@@ -171,13 +258,11 @@
         const resp = await fetch(`${scriptURL}?action=getDropdownData`);
         const data = await resp.json();
         
-        // Update data global dengan data terbaru dari Google Sheets
         nameData = data.names || []; 
         itemData = data.items || []; 
         itemStock = data.stocks || {}; 
         lastTransactions = data.transactions || [];
         
-        // Jalankan ulang inisialisasi autocomplete
         initAutocomplete();
         
     } catch (e) { 
@@ -189,46 +274,59 @@
 }
 
 function initAutocomplete() {
-    // 1. Refresh Autocomplete Nama
     const nameInput = document.getElementById("name");
     const nameList = document.getElementById("nameList");
     
-    // Pastikan box list dibersihkan dan disembunyikan dulu
     nameList.innerHTML = "";
     nameList.style.display = "none";
     
-    // Pasang ulang autocomplete dengan data terbaru (nameData)
     setupAutocomplete(nameInput, nameList, nameData);
 
-    // 2. Refresh Autocomplete pada semua baris Item yang ada
     document.querySelectorAll(".item-row").forEach(row => {
         const itemInput = row.querySelector(".item");
         const itemBox = row.querySelector(".autocomplete-list");
+        const qtyInput = row.querySelector(".qty");
+        const overlay = row.querySelector(".stock-overlay");
         
         itemBox.innerHTML = "";
         itemBox.style.display = "none";
         
-        setupAutocomplete(itemInput, itemBox, itemData, true);
+        setupAutocomplete(itemInput, itemBox, itemData, true, overlay, qtyInput);
+        
+        qtyInput.oninput = () => {
+            if (gaMode && overlay) {
+                overlay.style.display = (qtyInput.value.trim() === "" && overlay.textContent !== "") ? "block" : "none";
+            }
+        };
     });
 }
 
-// Pastikan fungsi setupAutocomplete tidak menumpuk listener
-function setupAutocomplete(input, box, data, isItem=false) {
+function setupAutocomplete(input, box, data, isItem=false, overlay=null, qtyInput=null) {
     if(!input || !box) return;
 
-    // Hapus listener lama dengan cara mengganti elemen (clone) 
-    // hanya jika benar-benar diperlukan, atau gunakan variabel global data.
-    // Cara termudah: hapus event listener lama dengan clone
     const newInput = input.cloneNode(true);
     input.parentNode.replaceChild(newInput, input);
 
     newInput.addEventListener("input", () => {
         const val = newInput.value.trim().toLowerCase();
+        
+        if (isItem && overlay && qtyInput) {
+            const currentVal = newInput.value.trim();
+            if (gaMode && itemStock[currentVal] !== undefined) {
+                overlay.textContent = itemStock[currentVal];
+                overlay.style.display = (qtyInput.value === "") ? "block" : "none";
+                qtyInput.classList.add("hide-placeholder");
+            } else {
+                overlay.style.display = "none";
+                overlay.textContent = "";
+                qtyInput.classList.remove("hide-placeholder");
+            }
+        }
+
         if (!val) { box.style.display = "none"; return; }
         
         const match = data.filter(d => {
             if (!d.toLowerCase().includes(val)) return false;
-            // Jika mode OUT dan bukan GA mode, sembunyikan jika stok 0
             if (isItem && !gaMode && (itemStock[d] || 0) <= 0) return false;
             return true;
         }).slice(0, 12);
@@ -242,6 +340,11 @@ function setupAutocomplete(input, box, data, isItem=false) {
             div.onclick = () => { 
                 newInput.value = div.textContent; 
                 box.style.display = "none"; 
+                if (isItem && overlay && gaMode && qtyInput) {
+                    overlay.textContent = itemStock[div.textContent] || 0;
+                    overlay.style.display = (qtyInput.value === "") ? "block" : "none";
+                    qtyInput.classList.add("hide-placeholder");
+                }
             };
         });
     });
@@ -256,7 +359,7 @@ function setupAutocomplete(input, box, data, isItem=false) {
             desc: row.querySelector(".desc").value.trim()
         })).filter(it => it.item && it.qty);
         if (!items.length) return showToast("⚠️ Isi Item!");
-        if (mode === "out") { for (let it of items) { if ((itemStock[it.item] || 0) < it.qty) return showToast(`⚠️ Stok ${it.item} Kurang!`); } }
+        if (mode === "out") { for (let it of items) { if (!gaMode && (itemStock[it.item] || 0) < it.qty) return showToast(`⚠️ Stok ${it.item} Kurang!`); } }
         document.getElementById("loaderOverlay").style.display = "flex";
         const body = new URLSearchParams();
         body.append('name', name); body.append('mode', mode); body.append('items', JSON.stringify(items));
@@ -278,10 +381,38 @@ function setupAutocomplete(input, box, data, isItem=false) {
     function showToast(m) { const t = document.getElementById("popupToast"); t.textContent = m; t.style.display = "block"; setTimeout(() => t.style.display="none", 2500); }
     function showSuccessPopup(m, its) { document.getElementById("successMode").textContent = m.toUpperCase(); document.getElementById("successItems").innerHTML = its.map(i => `• ${i.item} = ${i.qty}`).join('<br>'); document.getElementById("successPopup").style.display = "flex"; }
     function closeSuccessPopup() { document.getElementById("successPopup").style.display = "none"; }
-    function toggleHistoryPopup(event) { if (event) event.stopPropagation(); const p = document.getElementById("historyPopup"); const isVisible = p.style.display === "block"; if (!isVisible) { p.style.display = "block"; document.getElementById("historyList").innerHTML = lastTransactions.map(t => `<div style="font-size:0.8rem; border-bottom:1px solid #eee; padding:8px; background:#f3f4f6; margin-bottom:5px; border-radius:5px;"><b>${t[0]}</b> <span style="color:${t[1]==='in'?'#10b981':'#ef4444'}">${t[1].toUpperCase()}</span> ${t[2]}</div>`).join(''); } else { p.style.display = "none"; } }
-    document.addEventListener("click", function(event) { const historyPopup = document.getElementById("historyPopup"); const historyBtn = document.getElementById("historyBtn"); if (historyPopup.style.display === "block" && !historyPopup.contains(event.target) && !historyBtn.contains(event.target)) { historyPopup.style.display = "none"; } });
-    function checkPassword() { if (document.getElementById("adminPass").value === "admin123") { document.getElementById("passPopup").style.display = "none"; document.getElementById("adminPass").value = ""; handleSubmit("in"); } else showToast("❌ Salah!"); }
-    function closePassPopup() { document.getElementById("passPopup").style.display = "none"; }
+    
+    function toggleHistoryPopup(event) { 
+        if (event) event.stopPropagation(); 
+        document.getElementById("myDropdown").style.display = "none";
+        const p = document.getElementById("historyPopup"); 
+        const isVisible = p.style.display === "block"; 
+        if (!isVisible) { 
+            p.style.display = "block"; 
+            document.getElementById("historyList").innerHTML = lastTransactions.map(t => `<div style="font-size:0.8rem; border-bottom:1px solid #eee; padding:8px; background:#f3f4f6; margin-bottom:5px; border-radius:5px;"><b>${t[0]}</b> <span style="color:${t[1]==='in'?'#10b981':'#ef4444'}">${t[1].toUpperCase()}</span> ${t[2]}</div>`).join(''); 
+        } else { 
+            p.style.display = "none"; 
+        } 
+    }
+    
+    document.addEventListener("click", function(event) { 
+        const historyPopup = document.getElementById("historyPopup"); 
+        const dropdown = document.getElementById("myDropdown");
+        if (historyPopup.style.display === "block" && !historyPopup.contains(event.target)) { historyPopup.style.display = "none"; } 
+        if (dropdown.style.display === "flex" && !event.target.closest("#hamburgerBtn")) { dropdown.style.display = "none"; }
+    });
+
+    function checkPassword() { 
+        if (document.getElementById("adminPass").value === "admin123") { 
+            document.getElementById("passPopup").style.display = "none"; 
+            document.getElementById("adminPass").value = ""; 
+            if (passAction === "in") handleSubmit("in");
+            else if (passAction === "ga") {
+                updateGAUI(true);
+            }
+        } else showToast("❌ Salah!"); 
+    }
+    function closePassPopup() { document.getElementById("passPopup").style.display = "none"; document.getElementById("adminPass").value = ""; }
 
     document.getElementById("addRow").onclick = () => {
         const container = document.getElementById("itemContainer");
@@ -289,11 +420,14 @@ function setupAutocomplete(input, box, data, isItem=false) {
         const firstRow = container.children[0];
         const clone = firstRow.cloneNode(true);
         clone.querySelectorAll("input, textarea").forEach(i => { i.value = ""; i.style.height = "42px"; });
+        const o = clone.querySelector(".stock-overlay");
+        if(o) o.style.display = "none";
+        const q = clone.querySelector(".qty");
+        if(q) q.classList.remove("hide-placeholder");
         container.appendChild(clone); initAutocomplete();
     };
     document.addEventListener("click", e => { if (e.target.classList.contains("delete-row")) e.target.closest(".item-row").remove(); });
-    document.getElementById("titleBtn").onclick = () => { gaMode = !gaMode; showToast(gaMode ? "GA Mode ON" : "GA Mode OFF"); document.getElementById("historyBtn").style.display = gaMode ? "block" : "none"; };
-    document.getElementById("btnIn").onclick = () => document.getElementById("passPopup").style.display = "flex";
+    document.getElementById("btnIn").onclick = () => { passAction = "in"; document.getElementById("passPopup").style.display = "flex"; };
     document.getElementById("btnOut").onclick = () => handleSubmit("out");
     window.onload = () => fetchDataAndUpdateUI(true);
 </script>
