@@ -267,7 +267,7 @@
         
     } catch (e) { 
         console.error(e);
-        showToast("❌ Gagal Sinkronisasi!"); 
+        showToast("❌ Sync Error"); 
     } finally { 
         if(icon) setTimeout(() => icon.classList.remove("spinning"), 600); 
     }
@@ -369,7 +369,7 @@ function setupAutocomplete(input, box, data, isItem=false, overlay=null, qtyInpu
             const res = await resp.json();
             if (res.result === "success") { showSuccessPopup(mode, items); document.getElementById("myForm").reset(); fetchDataAndUpdateUI(false); }
             else { showToast("❌ " + res.error); }
-        } catch (e) { showToast("❌ Koneksi Gagal"); }
+        } catch (e) { showToast("❌ Connection Lost"); }
         finally { document.getElementById("loaderOverlay").style.display = "none"; }
     }
 
