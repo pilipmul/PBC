@@ -237,11 +237,11 @@
         const btnHist = document.getElementById("btnHistoryGA");
         const gaInd = document.getElementById("gaIndicator");
         if (gaMode) {
-            showToast("GA Mode: ON (Bypass Stok)");
+            showToast("GA Mode");
             btnHist.style.display = "block";
             gaInd.style.display = "block"; // Tampilkan tulisan GA
         } else {
-            showToast("GA Mode: OFF");
+            showToast("User Mode");
             btnHist.style.display = "none";
             gaInd.style.display = "none"; // Sembunyikan tulisan GA
             document.querySelectorAll(".stock-overlay").forEach(s => s.style.display = "none");
