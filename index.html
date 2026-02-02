@@ -27,7 +27,6 @@
         input, textarea { width: 100%; padding: 10px; border: none; font-size: 1rem; background-color: transparent; text-align: center; height: 42px; line-height: 22px; display: block; resize: none; }
         input:focus, textarea:focus { outline: none; }
 
-        /* Running Text hanya jika input TIDAK kosong dan TIDAK sedang fokus */
         input.item { overflow: hidden; text-overflow: clip; white-space: nowrap; }
         input.item:not(:placeholder-shown):not(:focus) { animation: marquee 10s linear infinite; }
         input.item:focus { animation: none; text-align: center; text-indent: 0; }
@@ -36,6 +35,15 @@
             0% { text-indent: 100%; }
             100% { text-indent: -100%; }
         }
+
+        .clear-btn {
+            position: absolute; right: 5px; top: 50%; transform: translateY(-50%);
+            background: #eee; color: #999; border-radius: 50%; width: 20px; height: 20px;
+            display: none; align-items: center; justify-content: center;
+            font-size: 14px; cursor: pointer; z-index: 10; font-weight: bold;
+        }
+        #nameWrapper:focus-within .clear-btn, 
+        .item-row div:first-child:focus-within .clear-btn { display: flex; }
 
         .row-3col { display: grid; grid-template-columns: 40% 20% 40%; gap: 0; align-items: center; margin-bottom: 10px; border-bottom: 1px solid #1877f2; padding-bottom: 10px; padding-top: 5px; position: relative; }
         .qty-wrapper { position: relative; display: grid; place-items: center; border-left: 1px solid #1877f2; border-right: 1px solid #1877f2; height: 42px; }
@@ -112,12 +120,14 @@
     <form id="myForm">
         <div id="nameWrapper">
             <input type="text" id="name" placeholder="Name" autocomplete="off" required>
+            <div class="clear-btn" onmousedown="clearInput(event, this)">×</div>
             <div id="nameList" class="autocomplete-list"></div>
         </div>
         <div id="itemContainer">
             <div class="row-3col item-row">
                 <div style="position: relative;">
                     <input type="text" class="item" placeholder="Item" autocomplete="off" required>
+                    <div class="clear-btn" onmousedown="clearInput(event, this)">×</div>
                     <div class="autocomplete-list"></div>
                 </div>
                 <div class="qty-wrapper">
@@ -148,6 +158,16 @@
 <script>
     const scriptURL = 'https://script.google.com/macros/s/AKfycbzNzaOwIeHkxlp9wdeHDlCLTfqbXlS-A6yzC8c-m4KDIzT-JlBLK_5QqBc6lHXmK41GSQ/exec';
     let nameData = [], itemData = [], itemStock = {}, lastTransactions = [], gaMode = false, activeTextarea = null, longPressTimer, passAction = "", currentMode = "", currentItems = [], currentName = "";
+
+    // Perbaikan: Gunakan onmousedown dan preventDefault
+    function clearInput(e, btn) {
+        e.preventDefault(); // Mencegah input kehilangan fokus sebelum teks dihapus
+        const inp = btn.parentElement.querySelector('input');
+        inp.value = '';
+        const list = btn.parentElement.querySelector('.autocomplete-list');
+        if(list) list.style.display = 'none';
+        inp.focus();
+    }
 
     function startLongPress(e, el) {
         activeTextarea = el;
@@ -276,7 +296,7 @@
 
     document.addEventListener("click", e => { 
         if (e.target.classList.contains("delete-row")) e.target.closest(".item-row").remove();
-        if (!e.target.closest(".autocomplete-list") && !e.target.closest("input")) document.querySelectorAll(".autocomplete-list").forEach(l => l.style.display = "none");
+        if (!e.target.closest(".autocomplete-list") && !e.target.closest("input") && !e.target.closest(".clear-btn")) document.querySelectorAll(".autocomplete-list").forEach(l => l.style.display = "none");
         if (!e.target.closest("#myDropdown") && !e.target.closest("#hamburgerBtn")) document.getElementById("myDropdown").style.display = "none";
         if (!e.target.closest("#historyPopup") && !e.target.closest("#btnHistoryGA")) document.getElementById("historyPopup").style.display = "none";
     });
