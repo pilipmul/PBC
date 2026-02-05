@@ -22,9 +22,9 @@
         }
         
         #titleBtn { width: 100%; max-width: 280px; transition: opacity 0.2s; user-select: none; -webkit-user-drag: none; }
-        #nameWrapper { position: relative; padding-top: 7px; border-top: 1px solid #1877f2; padding-bottom: 7px; border-bottom: 1px solid #1877f2; }
+        #nameWrapper { position: relative; padding-top: 2px; border-top: 1px solid #1877f2; padding-bottom: 2px; border-bottom: 1px solid #1877f2; }
         
-        input, textarea { width: 100%; padding: 10px; border: none; font-size: 1rem; background-color: transparent; text-align: center; height: 42px; line-height: 22px; display: block; resize: none; }
+        input, textarea { width: 100%; padding: 5px 10px; border: none; font-size: 1rem; background-color: transparent; text-align: center; height: 34px; line-height: 1.2; display: block; resize: none; }
         input:focus, textarea:focus { outline: none; }
 
         input.item { overflow: hidden; text-overflow: clip; white-space: nowrap; }
@@ -42,18 +42,19 @@
             display: none; align-items: center; justify-content: center;
             font-size: 14px; cursor: pointer; z-index: 10; font-weight: bold;
         }
-        #nameWrapper:focus-within .clear-btn, 
-        .item-row div:first-child:focus-within .clear-btn { display: flex; }
+        #nameWrapper:focus-within input:not(:placeholder-shown) ~ .clear-btn, 
+        .item-row div:first-child:focus-within input:not(:placeholder-shown) ~ .clear-btn { display: flex; }
 
-        .row-3col { display: grid; grid-template-columns: 40% 20% 40%; gap: 0; align-items: center; margin-bottom: 10px; border-bottom: 1px solid #1877f2; padding-bottom: 10px; padding-top: 5px; position: relative; }
-        .qty-wrapper { position: relative; display: grid; place-items: center; border-left: 1px solid #1877f2; border-right: 1px solid #1877f2; height: 42px; }
+        /* PERBAIKAN: Padding-top disesuaikan agar baris 1 dan seterusnya konsisten */
+        .row-3col { display: grid; grid-template-columns: 40% 20% 40%; gap: 0; align-items: center; margin-bottom: 5px; border-bottom: 1px solid #1877f2; padding-bottom: 5px; padding-top: 5px; position: relative; }
+        .qty-wrapper { position: relative; display: grid; place-items: center; border-left: 1px solid #1877f2; border-right: 1px solid #1877f2; height: 34px; }
 
         .stock-overlay { grid-area: 1/1; font-size: 1.1rem; font-weight: 700; color: rgba(220, 38, 38, 0.6); pointer-events: none; display: none; z-index: 1; }
-        input.qty { grid-area: 1/1; position: relative; z-index: 2; background: transparent !important; padding: 10px 0; -moz-appearance: textfield; }
+        input.qty { grid-area: 1/1; position: relative; z-index: 2; background: transparent !important; padding: 5px 0; -moz-appearance: textfield; }
         input.qty::-webkit-outer-spin-button, input.qty::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
         input.qty.hide-placeholder::placeholder { color: transparent; }
         
-        textarea.desc { overflow-y: hidden; padding-top: 10px; padding-right: 25px; }
+        textarea.desc { overflow-y: hidden; padding-top: 6px; padding-right: 25px; }
         .btn-group { display: flex; gap: 8px; margin-top: 10px; justify-content: center; position: relative; align-items: center; }
         .add-row { background-color: transparent; border: none; width: auto; padding: 8px; flex: none; display: flex; justify-content: center; align-items: center; }
         
@@ -62,7 +63,7 @@
         button:disabled { background-color: #ccc; cursor: not-allowed; }
         button.in, button.out { background-color: #595959; }
         
-        .autocomplete-list { position: absolute; background: #fff; border: 1px solid #ccc; border-radius: 6px; z-index: 2000; max-height: 180px; overflow-y: auto; width: 100%; box-shadow: 0 4px 10px rgba(0,0,0,0.1); text-align: left; display: none; top: 42px; left: 0; }
+        .autocomplete-list { position: absolute; background: #fff; border: 1px solid #ccc; border-radius: 6px; z-index: 2000; max-height: 180px; overflow-y: auto; width: 100%; box-shadow: 0 4px 10px rgba(0,0,0,0.1); text-align: left; display: none; top: 34px; left: 0; }
         .autocomplete-item { padding: 10px; cursor: pointer; border-bottom: 1px solid #eee; }
         .autocomplete-item:hover { background: #1877f2; color: #fff; }
         
@@ -159,9 +160,8 @@
     const scriptURL = 'https://script.google.com/macros/s/AKfycbzNzaOwIeHkxlp9wdeHDlCLTfqbXlS-A6yzC8c-m4KDIzT-JlBLK_5QqBc6lHXmK41GSQ/exec';
     let nameData = [], itemData = [], itemStock = {}, lastTransactions = [], gaMode = false, activeTextarea = null, longPressTimer, passAction = "", currentMode = "", currentItems = [], currentName = "";
 
-    // Perbaikan: Gunakan onmousedown dan preventDefault
     function clearInput(e, btn) {
-        e.preventDefault(); // Mencegah input kehilangan fokus sebelum teks dihapus
+        e.preventDefault();
         const inp = btn.parentElement.querySelector('input');
         inp.value = '';
         const list = btn.parentElement.querySelector('.autocomplete-list');
@@ -246,7 +246,7 @@
         if (!currentItems.length) return showToast("⚠️ Isi Item!");
         currentMode = mode;
         document.getElementById("confirmTitle").innerText = mode.toUpperCase();
-        document.getElementById("confirmItems").innerHTML = currentItems.map(i => `- ${i.item} (${i.qty})`).join('<br>');
+        document.getElementById("confirmItems").innerHTML = currentItems.map(i => `- ${i.item}: <span style="color:red;">${i.qty}</span>`).join('<br>');
         document.getElementById("confirmPopup").style.display = "flex";
         document.getElementById("finalSubmitBtn").onclick = () => {
             document.getElementById("confirmPopup").style.display = "none";
@@ -262,14 +262,21 @@
         try {
             const resp = await fetch(scriptURL, { method: 'POST', body: body });
             const res = await resp.json();
-            if (res.result === "success") { showSuccessPopup(mode, items); document.getElementById("myForm").reset(); fetchDataAndUpdateUI(); }
+            if (res.result === "success") { 
+                showSuccessPopup(mode, items); 
+                document.getElementById("myForm").reset(); 
+                const container = document.getElementById("itemContainer");
+                while(container.children.length > 1) container.removeChild(container.lastChild);
+                document.getElementById("addRow").style.visibility = "visible";
+                fetchDataAndUpdateUI(); 
+            }
             else { showToast(res.error); }
         } catch (e) { showToast("❌ Connection Error"); } finally { document.getElementById("loaderOverlay").style.display = "none"; }
     }
 
     function checkPassword() { if (document.getElementById("adminPass").value === "azza") { document.getElementById("passPopup").style.display = "none"; document.getElementById("adminPass").value = ""; if (passAction === "in") executeFinalSubmit(currentMode, currentName, currentItems); else if (passAction === "ga") updateGAUI(true); } else showToast("❌ Salah!"); }
     function showToast(m) { const t = document.getElementById("popupToast"); t.textContent = m; t.style.display = "block"; setTimeout(() => t.style.display="none", 2500); }
-    function showSuccessPopup(m, its) { document.getElementById("successMode").textContent = m.toUpperCase(); document.getElementById("successItems").innerHTML = its.map(i => `• ${i.item} (${i.qty})`).join('<br>'); document.getElementById("successPopup").style.display = "flex"; }
+    function showSuccessPopup(m, its) { document.getElementById("successMode").textContent = m.toUpperCase(); document.getElementById("successItems").innerHTML = its.map(i => `• ${i.item}: <span style="color:red;">${i.qty}</span>`).join('<br>'); document.getElementById("successPopup").style.display = "flex"; }
     function closeSuccessPopup() { document.getElementById("successPopup").style.display = "none"; }
     function closeConfirmPopup() { document.getElementById("confirmPopup").style.display = "none"; }
     function closePassPopup() { document.getElementById("passPopup").style.display = "none"; }
@@ -277,25 +284,35 @@
 
     document.getElementById("addRow").onclick = () => {
         const container = document.getElementById("itemContainer");
-        if (container.children.length >= 5) return showToast("⚠️ Maksimal 5");
-        const clone = container.children[0].cloneNode(true);
-        clone.querySelectorAll("input, textarea").forEach(i => i.value = "");
-        clone.querySelector(".stock-overlay").style.display = "none";
-        clone.querySelector(".autocomplete-list").style.display = "none";
+        const btnAdd = document.getElementById("addRow");
         
-        const tx = clone.querySelector("textarea.desc");
-        tx.onmousedown = (e) => startLongPress(e, tx);
-        tx.onmouseup = cancelLongPress;
-        tx.onmouseleave = cancelLongPress;
-        tx.ontouchstart = (e) => startLongPress(e, tx);
-        tx.ontouchend = cancelLongPress;
+        if (container.children.length < 5) {
+            const clone = container.children[0].cloneNode(true);
+            clone.querySelectorAll("input, textarea").forEach(i => i.value = "");
+            clone.querySelector(".stock-overlay").style.display = "none";
+            clone.querySelector(".autocomplete-list").style.display = "none";
+            
+            const tx = clone.querySelector("textarea.desc");
+            tx.onmousedown = (e) => startLongPress(e, tx);
+            tx.onmouseup = cancelLongPress;
+            tx.onmouseleave = cancelLongPress;
+            tx.ontouchstart = (e) => startLongPress(e, tx);
+            tx.ontouchend = cancelLongPress;
 
-        container.appendChild(clone);
-        initAutocomplete();
+            container.appendChild(clone);
+            initAutocomplete();
+            
+            if (container.children.length === 5) btnAdd.style.visibility = "hidden";
+        }
     };
 
     document.addEventListener("click", e => { 
-        if (e.target.classList.contains("delete-row")) e.target.closest(".item-row").remove();
+        if (e.target.classList.contains("delete-row")) {
+            e.target.closest(".item-row").remove();
+            if (document.getElementById("itemContainer").children.length < 5) {
+                document.getElementById("addRow").style.visibility = "visible";
+            }
+        }
         if (!e.target.closest(".autocomplete-list") && !e.target.closest("input") && !e.target.closest(".clear-btn")) document.querySelectorAll(".autocomplete-list").forEach(l => l.style.display = "none");
         if (!e.target.closest("#myDropdown") && !e.target.closest("#hamburgerBtn")) document.getElementById("myDropdown").style.display = "none";
         if (!e.target.closest("#historyPopup") && !e.target.closest("#btnHistoryGA")) document.getElementById("historyPopup").style.display = "none";
