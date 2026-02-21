@@ -45,7 +45,6 @@
         #nameWrapper:focus-within input:not(:placeholder-shown) ~ .clear-btn, 
         .item-row div:first-child:focus-within input:not(:placeholder-shown) ~ .clear-btn { display: flex; }
 
-        /* PERBAIKAN: Padding-top disesuaikan agar baris 1 dan seterusnya konsisten */
         .row-3col { display: grid; grid-template-columns: 40% 20% 40%; gap: 0; align-items: center; margin-bottom: 5px; border-bottom: 1px solid #1877f2; padding-bottom: 5px; padding-top: 5px; position: relative; }
         .qty-wrapper { position: relative; display: grid; place-items: center; border-left: 1px solid #1877f2; border-right: 1px solid #1877f2; height: 34px; }
 
@@ -62,6 +61,13 @@
         button:active { opacity: 0.7; }
         button:disabled { background-color: #ccc; cursor: not-allowed; }
         button.in, button.out { background-color: #1877f2; }
+
+        /* Style awal untuk tombol IN: Transparan & Terkunci */
+        #btnIn { 
+            opacity: 0.15; 
+            pointer-events: none; 
+            background-color: #1877f2; 
+        }
         
         .autocomplete-list { position: absolute; background: #fff; border: 1px solid #ccc; border-radius: 6px; z-index: 2000; max-height: 180px; overflow-y: auto; width: 100%; box-shadow: 0 4px 10px rgba(0,0,0,0.1); text-align: left; display: none; top: 34px; left: 0; }
         .autocomplete-item { padding: 10px; cursor: pointer; border-bottom: 1px solid #eee; }
@@ -185,7 +191,24 @@
 
     function toggleDropdown(e) { e.stopPropagation(); const d = document.getElementById("myDropdown"); d.style.display = (d.style.display === "flex") ? "none" : "flex"; }
     function toggleGAMode() { document.getElementById("myDropdown").style.display = "none"; if (!gaMode) { passAction = "ga"; document.getElementById("passPopup").style.display = "flex"; document.getElementById("adminPass").focus(); } else { updateGAUI(false); } }
-    function updateGAUI(status) { gaMode = status; document.getElementById("gaIndicator").style.display = gaMode ? "block" : "none"; document.getElementById("btnHistoryGA").style.display = gaMode ? "block" : "none"; initAutocomplete(); }
+    
+    function updateGAUI(status) { 
+        gaMode = status; 
+        document.getElementById("gaIndicator").style.display = gaMode ? "block" : "none"; 
+        document.getElementById("btnHistoryGA").style.display = gaMode ? "block" : "none"; 
+        
+        // Perubahan Opacity dan Pointer Events
+        const btnIn = document.getElementById("btnIn");
+        if (gaMode) {
+            btnIn.style.opacity = "1";
+            btnIn.style.pointerEvents = "auto";
+        } else {
+            btnIn.style.opacity = "0.15";
+            btnIn.style.pointerEvents = "none";
+        }
+        
+        initAutocomplete(); 
+    }
 
     async function fetchDataAndUpdateUI() {
         const icon = document.getElementById("refreshIcon");
