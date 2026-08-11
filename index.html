@@ -140,11 +140,13 @@
 <div id="passPopup" class="popup-overlay"><div class="popup-box"><input type="password" id="adminPass" placeholder="Password" style="border:1px solid #1877f2; border-radius:8px; margin-bottom:15px; height:45px;"><div class="btn-group"><button class="modal-btn" onclick="checkPassword()">OK</button><button class="modal-btn" onclick="closePassPopup()" style="background:#595959;">Batal</button></div></div></div>
 
 <script>
-    // Konfigurasi Supabase Client
-    // Ganti URL dan Anon Key sesuai dengan project Supabase Anda
-    const SUPABASE_URL = 'https://sfblelnbczlvykqemhtm.supabase.co';
-    const SUPABASE_KEY = 'sb_publishable_9k7sUNqlqhRqjkUtSNpFPQ_VAspSZT0';
-    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    // 1. Konfigurasi Supabase Client
+    // SANGAT PENTING: Ganti URL dan Anon Key di bawah ini sesuai akun Supabase Anda!
+    const SUPABASE_URL = 'https://PROJECT_ID_ANDA.supabase.co';
+    const SUPABASE_KEY = 'YOUR_SUPABASE_ANON_KEY';
+    
+    // Menggunakan nama variabel 'supabaseClient' untuk menghindari error shadowing
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     let nameData = [], itemData = [], itemStock = {}, lastTransactions = [];
     let gaMode = false, activeTextarea = null, longPressTimer, passAction = "", currentMode = "", currentItems = [], currentName = "";
@@ -212,12 +214,12 @@
         if(icon) icon.classList.add("spinning"); 
         try { 
             // 1. Ambil Nama Pengguna dari tabel "users"
-            const { data: usersData, error: errUsers } = await supabase.from('users').select('nama');
+            const { data: usersData, error: errUsers } = await supabaseClient.from('users').select('nama');
             if (errUsers) throw errUsers;
             nameData = usersData ? usersData.map(u => u.nama).filter(Boolean) : [];
 
             // 2. Ambil Item & Balance dari tabel "item"
-            const { data: itemsData, error: errItems } = await supabase.from('item').select('item, balance');
+            const { data: itemsData, error: errItems } = await supabaseClient.from('item').select('item, balance');
             if (errItems) throw errItems;
             itemData = [];
             itemStock = {};
@@ -231,7 +233,7 @@
             }
 
             // 3. Ambil 50 Transaksi Terakhir dari tabel "inventory"
-            const { data: invData, error: errInv } = await supabase
+            const { data: invData, error: errInv } = await supabaseClient
                 .from('inventory')
                 .select('name, in, out, item, date, desc')
                 .order('no', { ascending: false })
@@ -331,7 +333,7 @@
         }));
 
         try { 
-            const { error } = await supabase.from('inventory').insert(rowsToInsert);
+            const { error } = await supabaseClient.from('inventory').insert(rowsToInsert);
 
             if (error) {
                 showToast("❌ " + error.message);
