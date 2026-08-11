@@ -141,11 +141,9 @@
 
 <script>
     // 1. Konfigurasi Supabase Client
-    // SANGAT PENTING: Ganti URL dan Anon Key di bawah ini sesuai akun Supabase Anda!
     const SUPABASE_URL = 'https://sfblelnbczlvykqemhtm.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_9k7sUNqlqhRqjkUtSNpFPQ_VAspSZT0';
     
-    // Menggunakan nama variabel 'supabaseClient' untuk menghindari error shadowing
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     let nameData = [], itemData = [], itemStock = {}, lastTransactions = [];
@@ -232,10 +230,10 @@
                 });
             }
 
-            // 3. Ambil 50 Transaksi Terakhir dari tabel "inventory"
+            // 3. Ambil 50 Transaksi Terakhir dari tabel "inventory" (Kolom: user & note)
             const { data: invData, error: errInv } = await supabaseClient
                 .from('inventory')
-                .select('name, in, out, item, date, desc')
+                .select('user, in, out, item, date, note')
                 .order('no', { ascending: false })
                 .limit(50);
             
@@ -244,7 +242,7 @@
             lastTransactions = invData ? invData.map(i => {
                 const mode = (i.in && i.in > 0) ? 'in' : 'out';
                 const qty = mode === 'in' ? i.in : i.out;
-                return [i.name || '', mode, qty || 0, i.item || '', i.date || '', i.desc || ''];
+                return [i.user || '', mode, qty || 0, i.item || '', i.date || '', i.note || ''];
             }) : [];
 
             initAutocomplete(); 
@@ -318,17 +316,17 @@
         }; 
     }
 
-    // Kirim Data Transaksi ke Tabel "inventory" Supabase
+    // Kirim Data Transaksi ke Tabel "inventory" Supabase (Kolom: user & note)
     async function executeFinalSubmit(mode, name, items) { 
         document.getElementById("loaderOverlay").style.display = "flex"; 
         const todayStr = new Date().toISOString().split('T')[0];
 
         const rowsToInsert = items.map(i => ({
-            name: name,
+            user: name,
             item: i.item,
             in: mode === 'in' ? i.qty : null,
             out: mode === 'out' ? i.qty : null,
-            desc: i.desc || null,
+            note: i.desc || null,
             date: todayStr
         }));
 
