@@ -601,13 +601,23 @@
       
       const popover = document.getElementById('filterPopover');
       const rect = event.currentTarget.getBoundingClientRect();
-
+    
+      // Hitung posisi horizontal agar tidak terpotong di kiri maupun kanan layar
+      let leftPos = rect.left + window.scrollX - 100;
+      
+      // Batasi agar minimal 8px dari tepi kiri layar
+      if (leftPos < 8) leftPos = 8;
+      
+      // Batasi agar tidak melampaui tepi kanan layar
+      const maxLeft = window.innerWidth - 250;
+      if (leftPos > maxLeft) leftPos = maxLeft;
+    
       popover.style.top = `${rect.bottom + window.scrollY + 4}px`;
-      popover.style.left = `${Math.min(rect.left + window.scrollX - 180, window.innerWidth - 250)}px`;
+      popover.style.left = `${leftPos}px`;
       
       document.getElementById('filterSearchInput').value = '';
       document.getElementById('selectAllCheckbox').checked = true;
-
+    
       renderFilterCheckboxes();
       popover.classList.remove('hidden');
     }
