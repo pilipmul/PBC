@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <script>
+    (function() {
+      try {
+        const session = localStorage.getItem("user");
+        if (!session) {
+          window.location.replace("https://pilipmul.github.io/SOT/login.html");
+          return;
+        }
+        const userData = JSON.parse(session);
+        if (!userData) {
+          window.location.replace("https://pilipmul.github.io/SOT/login.html");
+          return;
+        }
+        if (userData.akses) {
+          const aks = userData.akses;
+          const punyaAkses = (aks.item === "Y" || aks.inventory === "Y" || aks.acces === "Y" || aks.accesControl === "Y");
+          if (!punyaAkses) {
+            alert("Anda tidak memiliki hak akses ke modul Item Master.");
+            window.location.replace("https://pilipmul.github.io/SOT/login.html");
+          }
+        }
+      } catch (err) {
+        console.error("Autentikasi gagal:", err);
+        window.location.replace("https://pilipmul.github.io/SOT/login.html");
+      }
+    })();
+  </script>
+
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Master Data Item - SOT Portal</title>
+  
+  <!-- Tailwind CSS v4 CDN -->
+  <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+  
+  <!-- Supabase JS CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  
+  <style>
+    body { overflow-x: hidden; }
+    table { table-layout: fixed; width: 100%; }
+    
+    .custom-scroll::-webkit-scrollbar {
+      width: 4px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: #475569;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen font-sans p-2 sm:p-4">
+
+  <div class="w-full mx-auto space-y-4 max-w-7xl">
+    
+    <!-- Header Section -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-slate-800 p-4 rounded-xl border border-slate-700 shadow-lg gap-4">
+      <div class="flex items-center gap-3">
+        <a href="https://pilipmul.github.io/SOT/dashboard.html" 
+           title="Kembali ke Dashboard"
+           class="inline-flex items-center justify-center w-10 h-10 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg transition shadow">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+        </a>
+        <div>
+          <h1 class="text-lg sm:text-xl font-bold text-white leading-tight">Master Data Item</h1>
+          <p class="text-xs text-slate-400">Pengelolaan katalog barang, kode, satuan, COA, dan proyek</p>
+        </div>
+      </div>
+
+      <!-- Action & Global Search Bar -->
+      <div class="flex items-center gap-2 w-full sm:w-auto">
+        <div class="relative flex-1 sm:w-64">
+          <input type="text" id="globalSearchInput" oninput="handleGlobalSearch()" placeholder="Cari item, kode, COA..." 
+                 class="w-full bg-slate-900 border border-slate-700 rounded-lg pl-8 pr-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-500" />
+          <svg class="w-4 h-4 text-slate-400 absolute left-2.5 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+        </div>
+
+        <button onclick="exportCSV()" title="Download CSV All"
+                class="inline-flex items-center justify-center w-9 h-9 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg transition shadow flex-shrink-0">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+        </button>
+
+        <button onclick="openModal('add')" title="Tambah Item Baru"
+                class="inline-flex items-center justify-center px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-lg transition shadow flex-shrink-0 gap-1.5">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+          <span>Tambah Item</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Stats summary bar -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+      <div class="bg-slate-800 border border-slate-700/80 p-3 rounded-xl">
+        <span class="text-slate-400 block">Total Item</span>
+        <span id="statTotalItems" class="text-lg font-bold text-white">0</span>
+      </div>
+      <div class="bg-slate-800 border border-slate-700/80 p-3 rounded-xl">
+        <span class="text-slate-400 block">Total Proyek</span>
+        <span id="statTotalProjects" class="text-lg font-bold text-indigo-400">0</span>
+      </div>
+      <div class="bg-slate-800 border border-slate-700/80 p-3 rounded-xl">
+        <span class="text-slate-400 block">Variasi Satuan</span>
+        <span id="statTotalSatuan" class="text-lg font-bold text-emerald-400">0</span>
+      </div>
+      <div class="bg-slate-800 border border-slate-700/80 p-3 rounded-xl">
+        <span class="text-slate-400 block">Total COA</span>
+        <span id="statTotalCoa" class="text-lg font-bold text-amber-400">0</span>
+      </div>
+    </div>
+
+    <!-- Table Section -->
+    <div class="bg-slate-800 rounded-xl border border-slate-700 shadow-lg overflow-hidden w-full">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse text-xs">
+          <thead>
+            <tr class="bg-slate-700/50 text-slate-300 uppercase tracking-wider border-b border-slate-700 select-none">
+              <th class="p-2.5 w-[5%] text-center">No</th>
+
+              <th class="p-2.5 w-[35%] relative">
+                <div class="flex items-center justify-between gap-1">
+                  <span class="truncate">Nama Item</span>
+                  <button onclick="toggleFilterMenu('item', event)" class="p-1 hover:bg-slate-600 rounded text-[9px] text-slate-400 hover:text-white" title="Filter & Sort">▼</button>
+                </div>
+              </th>
+
+              <th class="p-2.5 w-[15%] relative">
+                <div class="flex items-center justify-between gap-1">
+                  <span class="truncate">Kode Barang</span>
+                  <button onclick="toggleFilterMenu('code', event)" class="p-1 hover:bg-slate-600 rounded text-[9px] text-slate-400 hover:text-white" title="Filter & Sort">▼</button>
+                </div>
+              </th>
+
+              <th class="p-2.5 w-[10%] text-center relative">
+                <div class="flex items-center justify-between gap-1">
+                  <span class="truncate">Satuan</span>
+                  <button onclick="toggleFilterMenu('satuan', event)" class="p-1 hover:bg-slate-600 rounded text-[9px] text-slate-400 hover:text-white" title="Filter & Sort">▼</button>
+                </div>
+              </th>
+
+              <th class="p-2.5 w-[13%] relative">
+                <div class="flex items-center justify-between gap-1">
+                  <span class="truncate">COA</span>
+                  <button onclick="toggleFilterMenu('coa', event)" class="p-1 hover:bg-slate-600 rounded text-[9px] text-slate-400 hover:text-white" title="Filter & Sort">▼</button>
+                </div>
+              </th>
+
+              <th class="p-2.5 w-[12%] text-center relative">
+                <div class="flex items-center justify-between gap-1">
+                  <span class="truncate">Project</span>
+                  <button onclick="toggleFilterMenu('project', event)" class="p-1 hover:bg-slate-600 rounded text-[9px] text-slate-400 hover:text-white" title="Filter & Sort">▼</button>
+                </div>
+              </th>
+
+              <th class="p-2.5 w-[10%] text-center relative">
+                <div class="flex items-center justify-between gap-1">
+                  <span class="truncate">Balance</span>
+                  <button onclick="toggleFilterMenu('balance', event)" class="p-1 hover:bg-slate-600 rounded text-[9px] text-slate-400 hover:text-white" title="Filter & Sort">▼</button>
+                </div>
+              </th>
+            </tr>
+          </thead>
+          <tbody id="tableBody" class="divide-y divide-slate-700/50">
+            <tr>
+              <td colspan="7" class="p-6 text-center text-slate-400">Memuat data item...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Filter Dropdown Popover -->
+      <div id="filterPopover" class="fixed hidden z-50 w-60 bg-slate-800 border border-slate-700 rounded-xl shadow-2xl p-3 text-xs">
+        <div class="grid grid-cols-2 gap-2 mb-3 border-b border-slate-700 pb-3">
+          <button onclick="applySort('asc')" class="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-slate-700/60 hover:bg-indigo-600 text-slate-200 hover:text-white rounded-lg transition font-medium">
+            <span>↑</span> <span>A-Z</span>
+          </button>
+          <button onclick="applySort('desc')" class="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-slate-700/60 hover:bg-indigo-600 text-slate-200 hover:text-white rounded-lg transition font-medium">
+            <span>↓</span> <span>Z-A</span>
+          </button>
+        </div>
+
+        <div class="space-y-2">
+          <input type="text" id="filterSearchInput" oninput="renderFilterCheckboxes()" placeholder="Filter nilai..." 
+                 class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-100 focus:outline-none focus:border-indigo-500 text-xs" />
+          
+          <div class="flex justify-between items-center text-[11px] text-slate-400 px-1">
+            <label class="flex items-center gap-1.5 cursor-pointer select-none">
+              <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAllFilters(this.checked)" class="rounded bg-slate-900 border-slate-700 text-indigo-600 focus:ring-0" />
+              Pilih Semua
+            </label>
+            <button onclick="clearFilterColumn()" class="text-indigo-400 hover:text-indigo-300">Reset</button>
+          </div>
+
+          <div id="filterItemsList" class="max-h-36 overflow-y-auto custom-scroll space-y-1 pr-1 border border-slate-700/50 rounded-lg p-1.5 bg-slate-900/50">
+          </div>
+
+          <div class="flex gap-2 pt-2 border-t border-slate-700">
+            <button onclick="closeFilterPopover()" class="w-1/2 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg font-medium">Batal</button>
+            <button onclick="applyFilter()" class="w-1/2 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-medium">Terapkan</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pagination Footer -->
+      <div class="flex flex-col sm:flex-row justify-between items-center p-3 bg-slate-800 border-t border-slate-700 text-xs gap-3">
+        <span id="pageInfo" class="text-slate-400">Menampilkan 0 data</span>
+        
+        <div class="flex items-center gap-3">
+          <div class="flex items-center gap-1.5 text-slate-400">
+            <span>Hal:</span>
+            <input type="number" id="jumpPageInput" min="1" 
+                   onkeydown="if(event.key==='Enter') jumpToPage()"
+                   class="w-12 bg-slate-900 border border-slate-700 rounded px-1.5 py-1 text-center text-slate-100 focus:outline-none focus:border-indigo-500" />
+            <span id="totalPagesText">/ 1</span>
+            <button onclick="jumpToPage()" 
+                    class="px-2 py-1 bg-indigo-600/30 hover:bg-indigo-600 text-indigo-300 hover:text-white rounded border border-indigo-500/30 transition">
+              Go
+            </button>
+          </div>
+
+          <div class="inline-flex gap-1.5">
+            <button id="btnPrev" onclick="changePage(-1)" 
+                    class="px-2.5 py-1 bg-slate-700 hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed rounded text-slate-200 font-medium">
+              Prev
+            </button>
+            <button id="btnNext" onclick="changePage(1)" 
+                    class="px-2.5 py-1 bg-slate-700 hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed rounded text-slate-200 font-medium">
+              Next
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Modal Form CRUD (Semua Header Kecuali Balance) -->
+  <div id="modal" class="fixed inset-0 bg-black/70 hidden backdrop-blur-sm flex justify-center items-center p-4 z-50">
+    <div class="bg-slate-800 border border-slate-700 rounded-xl p-5 w-full max-w-md shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto custom-scroll">
+      <div class="flex justify-between items-center border-b border-slate-700 pb-3">
+        <h3 id="modalTitle" class="text-base font-bold text-white">Form Master Item</h3>
+        <button onclick="closeModal()" class="text-slate-400 hover:text-white text-lg font-bold">&times;</button>
+      </div>
+      
+      <form id="itemForm" onsubmit="saveData(event)" class="space-y-3.5 text-xs" autocomplete="off">
+        <input type="hidden" id="editNo" />
+        
+        <!-- Input Item Name -->
+        <div>
+          <label class="block font-medium text-slate-300 mb-1">Nama Item <span class="text-rose-400">*</span></label>
+          <input type="text" id="inputItem" required
+                 class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500" 
+                 placeholder="Masukkan nama barang / material..." />
+        </div>
+
+        <!-- Input Item Code -->
+        <div>
+          <label class="block font-medium text-slate-300 mb-1">Kode Barang</label>
+          <input type="text" id="inputCode"
+                 class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500 font-mono" 
+                 placeholder="Contoh: 3005.1-001" />
+        </div>
+
+        <!-- Grid Input Satuan & COA -->
+        <div class="grid grid-cols-2 gap-3">
+          <!-- Input Satuan dengan Autocomplete -->
+          <div class="relative">
+            <label class="block font-medium text-slate-300 mb-1">Satuan</label>
+            <input type="text" id="inputSatuan" oninput="handleSuggest('satuan')"
+                   class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500" 
+                   placeholder="pcs, unt, btl..." />
+            <div id="satuanSuggestList" class="hidden absolute left-0 right-0 top-full mt-1 bg-slate-900 border border-slate-700 rounded-lg shadow-xl max-h-32 overflow-y-auto custom-scroll z-50 divide-y divide-slate-800"></div>
+          </div>
+
+          <!-- Input COA dengan Autocomplete -->
+          <div class="relative">
+            <label class="block font-medium text-slate-300 mb-1">COA</label>
+            <input type="text" id="inputCoa" oninput="handleSuggest('coa')"
+                   class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500 font-mono" 
+                   placeholder="500.10.02" />
+            <div id="coaSuggestList" class="hidden absolute left-0 right-0 top-full mt-1 bg-slate-900 border border-slate-700 rounded-lg shadow-xl max-h-32 overflow-y-auto custom-scroll z-50 divide-y divide-slate-800"></div>
+          </div>
+        </div>
+
+        <!-- Input Project dengan Autocomplete -->
+        <div class="relative">
+          <label class="block font-medium text-slate-300 mb-1">Project / Divisi</label>
+          <input type="text" id="inputProject" oninput="handleSuggest('project')"
+                 class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500" 
+                 placeholder="ME, Sipil, ATK, CS..." />
+          <div id="projectSuggestList" class="hidden absolute left-0 right-0 top-full mt-1 bg-slate-900 border border-slate-700 rounded-lg shadow-xl max-h-32 overflow-y-auto custom-scroll z-50 divide-y divide-slate-800"></div>
+        </div>
+
+        <div class="bg-slate-900/60 p-2.5 rounded-lg border border-slate-700/50 text-[11px] text-slate-400">
+          * Catatan: Kolom <b>Balance</b> dikelola otomatis oleh sistem transaksi dan tidak diubah di halaman Master Item.
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex justify-between items-center pt-3 border-t border-slate-700">
+          <div>
+            <button type="button" id="btnDeleteInModal" onclick="deleteDataInModal()" 
+                    class="px-3 py-1.5 bg-rose-600/20 hover:bg-rose-600/40 text-rose-400 hover:text-rose-300 border border-rose-500/30 rounded-lg font-medium hidden">
+              🗑️ Hapus
+            </button>
+          </div>
+          <div class="flex gap-2">
+            <button type="button" onclick="closeModal()" class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg font-medium">
+              Batal
+            </button>
+            <button type="submit" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-medium shadow">
+              Simpan
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://sfblelnbczlvykqemhtm.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_9k7sUNqlqhRqjkUtSNpFPQ_VAspSZT0';
+    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const PAGE_SIZE = 100;
+    let currentPage = 1;
+    let totalRows = 0;
+    let rawDataMap = new Map();
+    let fetchedData = [];
+
+    // Auto-complete Reference Cache
+    let uniqueSatuanList = [];
+    let uniqueCoaList = [];
+    let uniqueProjectList = [];
+
+    // Filter & Sort States
+    let globalSearchTerm = '';
+    let activeFilterColumn = null;
+    let filterSelections = {}; 
+    let sortConfig = { column: null, direction: null };
+
+    document.addEventListener('DOMContentLoaded', () => {
+      fetchTableData();
+
+      // Real-time synchronization
+      _supabase
+        .channel('public:item')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'item' }, () => {
+          fetchTableData();
+        })
+        .subscribe();
+    });
+
+    // Close popovers & suggestion lists when clicking outside
+    document.addEventListener('click', (e) => {
+      const popover = document.getElementById('filterPopover');
+      if (!popover.classList.contains('hidden') && !popover.contains(e.target) && !e.target.closest('button[onclick*="toggleFilterMenu"]')) {
+        closeFilterPopover();
+      }
+
+      ['satuan', 'coa', 'project'].forEach(field => {
+        const input = document.getElementById('input' + field.charAt(0).toUpperCase() + field.slice(1));
+        const list = document.getElementById(field + 'SuggestList');
+        if (input && list && !e.target.closest('#' + input.id) && !e.target.closest('#' + list.id)) {
+          list.classList.add('hidden');
+        }
+      });
+    });
+
+    async function fetchTableData() {
+      const tbody = document.getElementById('tableBody');
+      tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-slate-400">Memuat data item...</td></tr>`;
+
+      try {
+        const { count, error: countErr } = await _supabase
+          .from('item')
+          .select('*', { count: 'exact', head: true });
+        
+        if (countErr) throw countErr;
+        totalRows = count || 0;
+
+        if (totalRows === 0) {
+          tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-slate-400">Belum ada data item.</td></tr>`;
+          updatePaginationUI();
+          updateStats([]);
+          return;
+        }
+
+        const totalPages = Math.ceil(totalRows / PAGE_SIZE);
+        if (currentPage > totalPages) currentPage = totalPages;
+
+        const { data, error } = await _supabase
+          .from('item')
+          .select('*')
+          .order('no', { ascending: true });
+
+        if (error) throw error;
+
+        fetchedData = data || [];
+        rawDataMap.clear();
+        fetchedData.forEach(row => rawDataMap.set(row.no, row));
+
+        // Extract Unique Autocomplete Lists
+        uniqueSatuanList = Array.from(new Set(fetchedData.map(d => d.satuan).filter(Boolean))).sort();
+        uniqueCoaList = Array.from(new Set(fetchedData.map(d => d.coa).filter(Boolean))).sort();
+        uniqueProjectList = Array.from(new Set(fetchedData.map(d => d.project).filter(Boolean))).sort();
+
+        updateStats(fetchedData);
+        renderTable();
+
+      } catch (err) {
+        alert('Gagal mengambil data: ' + err.message);
+      }
+    }
+
+    function updateStats(data) {
+      document.getElementById('statTotalItems').innerText = data.length.toLocaleString('id-ID');
+      document.getElementById('statTotalProjects').innerText = new Set(data.map(d => d.project).filter(Boolean)).size;
+      document.getElementById('statTotalSatuan').innerText = new Set(data.map(d => d.satuan).filter(Boolean)).size;
+      document.getElementById('statTotalCoa').innerText = new Set(data.map(d => d.coa).filter(Boolean)).size;
+    }
+
+    function handleGlobalSearch() {
+      globalSearchTerm = document.getElementById('globalSearchInput').value.trim().toLowerCase();
+      currentPage = 1;
+      renderTable();
+    }
+
+    function renderTable() {
+      const tbody = document.getElementById('tableBody');
+      tbody.innerHTML = '';
+
+      // 1. Filter Global Search & Column Popover Filters
+      let processedData = fetchedData.filter(row => {
+        // Global search
+        if (globalSearchTerm) {
+          const matchItem = String(row.item || '').toLowerCase().includes(globalSearchTerm);
+          const matchCode = String(row.code || '').toLowerCase().includes(globalSearchTerm);
+          const matchCoa = String(row.coa || '').toLowerCase().includes(globalSearchTerm);
+          const matchProject = String(row.project || '').toLowerCase().includes(globalSearchTerm);
+          const matchSatuan = String(row.satuan || '').toLowerCase().includes(globalSearchTerm);
+          if (!matchItem && !matchCode && !matchCoa && !matchProject && !matchSatuan) return false;
+        }
+
+        // Column specific filters
+        for (const colKey in filterSelections) {
+          const selectedValues = filterSelections[colKey];
+          if (selectedValues && selectedValues.length > 0) {
+            const rowVal = String(row[colKey] ?? '-').toLowerCase();
+            const match = selectedValues.some(val => val.toLowerCase() === rowVal);
+            if (!match) return false;
+          }
+        }
+        return true;
+      });
+
+      // 2. Sorting
+      if (sortConfig.column && sortConfig.direction) {
+        processedData.sort((a, b) => {
+          let valA = a[sortConfig.column] ?? '';
+          let valB = b[sortConfig.column] ?? '';
+
+          if (typeof valA === 'number' && typeof valB === 'number') {
+            return sortConfig.direction === 'asc' ? valA - valB : valB - valA;
+          }
+
+          valA = String(valA).toLowerCase();
+          valB = String(valB).toLowerCase();
+
+          if (valA < valB) return sortConfig.direction === 'asc' ? -1 : 1;
+          if (valA > valB) return sortConfig.direction === 'asc' ? 1 : -1;
+          return 0;
+        });
+      }
+
+      const filteredTotal = processedData.length;
+
+      if (filteredTotal === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-slate-400">Tidak ada item yang sesuai dengan kriteria pencarian / filter.</td></tr>`;
+        updatePaginationUI(0);
+        return;
+      }
+
+      // 3. Paginate Processed Data
+      const totalPages = Math.ceil(filteredTotal / PAGE_SIZE) || 1;
+      if (currentPage > totalPages) currentPage = totalPages;
+
+      const startIndex = (currentPage - 1) * PAGE_SIZE;
+      const paginatedData = processedData.slice(startIndex, startIndex + PAGE_SIZE);
+
+      paginatedData.forEach(row => {
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-700/30 border-b border-slate-700/50 text-slate-300';
+        
+        tr.innerHTML = `
+          <td class="p-2.5 text-center font-mono text-slate-400">${row.no}</td>
+          <td class="p-2.5 font-medium text-white break-words" title="${escapeHtml(row.item || '')}">${escapeHtml(row.item || '-')}</td>
+          <td class="p-2.5 font-mono text-indigo-300 break-all">${escapeHtml(row.code || '-')}</td>
+          <td class="p-2.5 text-center text-slate-300 font-mono">${escapeHtml(row.satuan || '-')}</td>
+          <td class="p-2.5 font-mono text-amber-300/90">${escapeHtml(row.coa || '-')}</td>
+          <td class="p-2.5 text-center">
+            <button onclick="openModalForNo(${row.no})" title="Edit Item #${row.no}"
+                    class="px-2.5 py-1 rounded-md bg-indigo-600/20 hover:bg-indigo-600 border border-indigo-500/40 text-indigo-300 hover:text-white font-semibold text-[10px] transition shadow-sm">
+              ${escapeHtml(row.project || '-')}
+            </button>
+          </td>
+          <td class="p-2.5 text-center font-semibold text-slate-100 bg-slate-800/40">${row.balance ?? 0}</td>
+        `;
+        
+        tbody.appendChild(tr);
+      });
+
+      updatePaginationUI(filteredTotal);
+    }
+
+    // Auto-suggest implementation for Modal inputs
+    function handleSuggest(field) {
+      const inputId = 'input' + field.charAt(0).toUpperCase() + field.slice(1);
+      const listId = field + 'SuggestList';
+      const inputVal = document.getElementById(inputId).value.trim().toLowerCase();
+      const listEl = document.getElementById(listId);
+
+      let sourceList = [];
+      if (field === 'satuan') sourceList = uniqueSatuanList;
+      else if (field === 'coa') sourceList = uniqueCoaList;
+      else if (field === 'project') sourceList = uniqueProjectList;
+
+      if (!inputVal) {
+        listEl.classList.add('hidden');
+        listEl.innerHTML = '';
+        return;
+      }
+
+      const filtered = sourceList.filter(val => val.toLowerCase().includes(inputVal));
+      if (filtered.length === 0) {
+        listEl.classList.add('hidden');
+        return;
+      }
+
+      listEl.innerHTML = '';
+      filtered.forEach(val => {
+        const itemDiv = document.createElement('div');
+        itemDiv.className = 'px-3 py-1.5 hover:bg-indigo-600 hover:text-white text-slate-200 cursor-pointer transition';
+        itemDiv.innerText = val;
+        itemDiv.onclick = () => {
+          document.getElementById(inputId).value = val;
+          listEl.classList.add('hidden');
+        };
+        listEl.appendChild(itemDiv);
+      });
+
+      listEl.classList.remove('hidden');
+    }
+
+    // Filter Popover Menu Handlers
+    function toggleFilterMenu(columnKey, event) {
+      event.stopPropagation();
+      activeFilterColumn = columnKey;
+      
+      const popover = document.getElementById('filterPopover');
+      const rect = event.currentTarget.getBoundingClientRect();
+
+      popover.style.top = `${rect.bottom + window.scrollY + 4}px`;
+      popover.style.left = `${Math.min(rect.left + window.scrollX - 180, window.innerWidth - 250)}px`;
+      
+      document.getElementById('filterSearchInput').value = '';
+      document.getElementById('selectAllCheckbox').checked = true;
+
+      renderFilterCheckboxes();
+      popover.classList.remove('hidden');
+    }
+
+    function closeFilterPopover() {
+      document.getElementById('filterPopover').classList.add('hidden');
+    }
+
+    function renderFilterCheckboxes() {
+      const container = document.getElementById('filterItemsList');
+      const searchVal = document.getElementById('filterSearchInput').value.toLowerCase();
+      container.innerHTML = '';
+
+      if (!activeFilterColumn) return;
+
+      const uniqueValues = Array.from(new Set(fetchedData.map(r => String(r[activeFilterColumn] ?? '-')))).sort();
+      const activeSelections = filterSelections[activeFilterColumn] || uniqueValues;
+
+      const filteredValues = uniqueValues.filter(val => val.toLowerCase().includes(searchVal));
+
+      if (filteredValues.length === 0) {
+        container.innerHTML = `<span class="text-slate-500 italic text-[11px] block p-1">Item tidak ditemukan</span>`;
+        return;
+      }
+
+      filteredValues.forEach(val => {
+        const isChecked = activeSelections.includes(val);
+        const label = document.createElement('label');
+        label.className = 'flex items-center gap-2 text-slate-300 hover:text-white cursor-pointer text-[11px] truncate';
+        label.innerHTML = `
+          <input type="checkbox" value="${escapeHtml(val)}" ${isChecked ? 'checked' : ''} 
+                 class="filter-item-checkbox rounded bg-slate-900 border-slate-700 text-indigo-600 focus:ring-0" />
+          <span class="truncate" title="${escapeHtml(val)}">${escapeHtml(val)}</span>
+        `;
+        container.appendChild(label);
+      });
+    }
+
+    function toggleSelectAllFilters(isChecked) {
+      const checkboxes = document.querySelectorAll('.filter-item-checkbox');
+      checkboxes.forEach(cb => cb.checked = isChecked);
+    }
+
+    function applyFilter() {
+      const checkboxes = document.querySelectorAll('.filter-item-checkbox:checked');
+      const selected = Array.from(checkboxes).map(cb => cb.value);
+
+      filterSelections[activeFilterColumn] = selected;
+      currentPage = 1;
+      renderTable();
+      closeFilterPopover();
+    }
+
+    function clearFilterColumn() {
+      delete filterSelections[activeFilterColumn];
+      currentPage = 1;
+      renderTable();
+      closeFilterPopover();
+    }
+
+    function applySort(direction) {
+      sortConfig = { column: activeFilterColumn, direction: direction };
+      renderTable();
+      closeFilterPopover();
+    }
+
+    function updatePaginationUI(filteredTotal = totalRows) {
+      const totalPages = Math.ceil(filteredTotal / PAGE_SIZE) || 1;
+      const startNo = filteredTotal === 0 ? 0 : ((currentPage - 1) * PAGE_SIZE) + 1;
+      const endNo = Math.min(currentPage * PAGE_SIZE, filteredTotal);
+
+      document.getElementById('pageInfo').innerText = 
+        `Menampilkan ${startNo} - ${endNo} dari ${filteredTotal} data`;
+
+      document.getElementById('jumpPageInput').value = currentPage;
+      document.getElementById('jumpPageInput').max = totalPages;
+      document.getElementById('totalPagesText').innerText = `/ ${totalPages}`;
+
+      document.getElementById('btnPrev').disabled = currentPage <= 1;
+      document.getElementById('btnNext').disabled = currentPage >= totalPages;
+    }
+
+    function changePage(direction) {
+      currentPage += direction;
+      renderTable();
+    }
+
+    function jumpToPage() {
+      const inputEl = document.getElementById('jumpPageInput');
+      let targetPage = parseInt(inputEl.value);
+      const totalPages = Math.ceil(fetchedData.length / PAGE_SIZE) || 1;
+
+      if (isNaN(targetPage) || targetPage < 1) targetPage = 1;
+      if (targetPage > totalPages) targetPage = totalPages;
+
+      currentPage = targetPage;
+      renderTable();
+    }
+
+    function openModalForNo(no) {
+      const row = rawDataMap.get(no);
+      if (row) {
+        openModal('edit', row);
+      }
+    }
+
+    function openModal(mode, row = null) {
+      document.getElementById('itemForm').reset();
+      document.getElementById('editNo').value = '';
+      
+      ['satuan', 'coa', 'project'].forEach(f => {
+        document.getElementById(f + 'SuggestList').classList.add('hidden');
+      });
+
+      const deleteBtn = document.getElementById('btnDeleteInModal');
+
+      if (mode === 'edit' && row) {
+        document.getElementById('modalTitle').innerText = 'Edit Item #' + row.no;
+        document.getElementById('editNo').value = row.no;
+        document.getElementById('inputItem').value = row.item || '';
+        document.getElementById('inputCode').value = row.code || '';
+        document.getElementById('inputSatuan').value = row.satuan || '';
+        document.getElementById('inputCoa').value = row.coa || '';
+        document.getElementById('inputProject').value = row.project || '';
+        
+        deleteBtn.classList.remove('hidden');
+      } else {
+        document.getElementById('modalTitle').innerText = 'Tambah Item Baru';
+        deleteBtn.classList.add('hidden');
+      }
+
+      document.getElementById('modal').classList.remove('hidden');
+    }
+
+    function closeModal() {
+      document.getElementById('modal').classList.add('hidden');
+    }
+
+    async function saveData(e) {
+      e.preventDefault();
+      const no = document.getElementById('editNo').value;
+      const item = document.getElementById('inputItem').value.trim();
+      const code = document.getElementById('inputCode').value.trim();
+      const satuan = document.getElementById('inputSatuan').value.trim();
+      const coa = document.getElementById('inputCoa').value.trim();
+      const project = document.getElementById('inputProject').value.trim();
+
+      // CRUD untuk semua header kecuali balance
+      const payload = {
+        item: item,
+        code: code || null,
+        satuan: satuan || null,
+        coa: coa || null,
+        project: project || null
+      };
+
+      try {
+        if (no) {
+          const { error } = await _supabase
+            .from('item')
+            .update(payload)
+            .eq('no', no);
+          if (error) throw error;
+        } else {
+          const { error } = await _supabase
+            .from('item')
+            .insert([payload]);
+          if (error) throw error;
+        }
+
+        closeModal();
+        fetchTableData();
+      } catch (err) {
+        alert('Gagal menyimpan data: ' + err.message);
+      }
+    }
+
+    async function deleteDataInModal() {
+      const no = document.getElementById('editNo').value;
+      if (!no) return;
+
+      if (!confirm(`Apakah Anda yakin ingin menghapus item #${no}?`)) return;
+
+      try {
+        const { error } = await _supabase
+          .from('item')
+          .delete()
+          .eq('no', no);
+          
+        if (error) throw error;
+
+        closeModal();
+        fetchTableData();
+      } catch (err) {
+        alert('Gagal menghapus item: ' + err.message);
+      }
+    }
+
+    async function exportCSV() {
+      try {
+        const { data, error } = await _supabase
+          .from('item')
+          .select('*')
+          .order('no', { ascending: true });
+
+        if (error) throw error;
+        if (!data || data.length === 0) {
+          alert('Tidak ada data untuk diunduh');
+          return;
+        }
+
+        const headers = ['no', 'item', 'code', 'satuan', 'coa', 'project', 'balance'];
+        const csvRows = [headers.join(',')];
+
+        data.forEach(row => {
+          const values = headers.map(header => {
+            const val = row[header] ?? '';
+            return `"${String(val).replace(/"/g, '""')}"`;
+          });
+          csvRows.push(values.join(','));
+        });
+
+        const csvContent = 'data:text/csv;charset=utf-8,' + csvRows.join('\n');
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement('a');
+        link.setAttribute('href', encodedUri);
+        link.setAttribute('download', `item_master_${new Date().toISOString().slice(0,10)}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+      } catch (err) {
+        alert('Gagal mengunduh CSV: ' + err.message);
+      }
+    }
+
+    function escapeHtml(text) {
+      if (!text) return '';
+      return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+    }
+  </script>
+</body>
+</html>
