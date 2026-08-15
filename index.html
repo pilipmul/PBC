@@ -76,6 +76,15 @@
             align-items: center; 
             box-shadow: none; 
             outline: none;
+            -webkit-tap-highlight-color: transparent; /* Menghapus sorotan tap default browser */
+        }
+        
+        /* Memastikan tombol kembali ke state normal setelah dilepas/tap di mobile */
+        .add-row:focus, 
+        .add-row:active {
+            background-color: transparent !important;
+            outline: none !important;
+            box-shadow: none !important;
         }
         
         button { 
@@ -513,7 +522,9 @@
         `).join('');
     }
 
-    document.getElementById("addRow").onclick = () => { 
+    document.getElementById("addRow").onclick = function(e) { 
+        this.blur(); // Melepas fokus seketika setelah ditekan di mobile
+        
         const container = document.getElementById("itemContainer"); 
         const btnAdd = document.getElementById("addRow"); 
         if (container.children.length < 5) { 
@@ -522,7 +533,7 @@
             
             const qtyInp = clone.querySelector("input.qty");
             if (qtyInp) qtyInp.onkeydown = preventNonNumeric;
-
+    
             clone.querySelector(".stock-overlay").style.display = "none"; 
             clone.querySelector(".autocomplete-list").style.display = "none"; 
             const tx = clone.querySelector("textarea.desc"); 
