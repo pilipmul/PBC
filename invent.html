@@ -346,15 +346,23 @@
       </div>
 
       <div class="space-y-4">
-        <!-- 1. Filter Item (Multi Item max 5) -->
+        <!-- 1. Filter Item (Multi Item & Select All) -->
         <div>
           <div class="flex justify-between items-center mb-1">
-            <label class="block font-medium text-slate-300">Item <span class="text-slate-500 font-normal">(Maks. 5 item)</span></label>
-            <span id="exportItemCount" class="text-[11px] text-indigo-400 font-medium">Terpilih: 0/5</span>
+            <label class="block font-medium text-slate-300">Pilih Item</label>
+            <span id="exportItemCount" class="text-[11px] text-indigo-400 font-medium">Terpilih: 0/0</span>
           </div>
+          
           <input type="text" id="exportItemSearch" oninput="renderExportItemCheckboxes()" placeholder="Cari item..." 
                  class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-100 focus:outline-none focus:border-indigo-500 mb-2" />
           
+          <div class="flex justify-between items-center text-[11px] text-slate-400 px-1 mb-1.5">
+            <label class="flex items-center gap-1.5 cursor-pointer hover:text-white">
+              <input type="checkbox" id="exportSelectAllCb" onchange="toggleSelectAllExportItems(this.checked)" class="rounded bg-slate-900 border-slate-700 text-emerald-600 focus:ring-0" />
+              Pilih Semua
+            </label>
+          </div>
+
           <div id="exportItemsContainer" class="max-h-36 overflow-y-auto suggest-scroll space-y-1 pr-1 border border-slate-700 rounded-lg p-2 bg-slate-900/60">
             <!-- Item checkboxes loaded dynamically -->
           </div>
@@ -373,14 +381,6 @@
               <input type="date" id="exportEndDate" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-100 focus:outline-none focus:border-indigo-500" />
             </div>
           </div>
-        </div>
-
-        <!-- 3. Filter Project -->
-        <div>
-          <label class="block font-medium text-slate-300 mb-1">Project</label>
-          <select id="exportProjectSelect" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-100 focus:outline-none focus:border-indigo-500">
-            <option value="">-- Semua Project --</option>
-          </select>
         </div>
       </div>
 
@@ -411,7 +411,6 @@
     // Cache database suggestions
     let dbUsersList = [];
     let dbItemsList = [];
-    let dbProjectsList = [];
     let selectedExportItems = [];
 
     // Filter & Sort States
@@ -463,13 +462,12 @@
       }
     });
 
-    // Load master users, items & projects data for quick suggestion search & filter
+    // Load master users & items data for quick suggestion search & filter
     async function preloadSuggestions() {
       try {
-        const [usersRes, itemsRes, projectsRes] = await Promise.all([
+        const [usersRes, itemsRes] = await Promise.all([
           _supabase.from('users').select('nama').order('nama', { ascending: true }),
-          _supabase.from('item').select('item').order('item', { ascending: true }),
-          _supabase.from('inventory').select('project').not('project', 'is', null)
+          _supabase.from('item').select('item').order('item', { ascending: true })
         ]);
 
         if (usersRes.data) {
@@ -477,9 +475,6 @@
         }
         if (itemsRes.data) {
           dbItemsList = Array.from(new Set(itemsRes.data.map(i => i.item).filter(Boolean)));
-        }
-        if (projectsRes.data) {
-          dbProjectsList = Array.from(new Set(projectsRes.data.map(p => p.project).filter(Boolean))).sort();
         }
       } catch (err) {
         console.error('Gagal mengambil data referensi saran:', err);
@@ -884,16 +879,7 @@
       document.getElementById('exportItemSearch').value = '';
       document.getElementById('exportStartDate').value = '';
       document.getElementById('exportEndDate').value = '';
-      
-      // Load dropdown Project
-      const projectSelect = document.getElementById('exportProjectSelect');
-      projectSelect.innerHTML = '<option value="">-- Semua Project --</option>';
-      dbProjectsList.forEach(proj => {
-        const opt = document.createElement('option');
-        opt.value = proj;
-        opt.textContent = proj;
-        projectSelect.appendChild(opt);
-      });
+      document.getElementById('exportSelectAllCb').checked = false;
 
       renderExportItemCheckboxes();
       document.getElementById('exportModal').classList.remove('hidden');
@@ -929,17 +915,20 @@
         container.appendChild(label);
       });
 
+      // Synchronize "Pilih Semua" Checkbox state
+      const selectAllCb = document.getElementById('exportSelectAllCb');
+      if (filteredItems.length > 0 && filteredItems.every(i => selectedExportItems.includes(i))) {
+        selectAllCb.checked = true;
+      } else {
+        selectAllCb.checked = false;
+      }
+
       updateExportItemCount();
     }
 
     function handleExportItemToggle(checkbox) {
       const val = checkbox.value;
       if (checkbox.checked) {
-        if (selectedExportItems.length >= 5) {
-          alert('Maksimal hanya dapat memilih 5 item untuk diunduh!');
-          checkbox.checked = false;
-          return;
-        }
         if (!selectedExportItems.includes(val)) {
           selectedExportItems.push(val);
         }
@@ -947,10 +936,33 @@
         selectedExportItems = selectedExportItems.filter(item => item !== val);
       }
       updateExportItemCount();
+
+      // Check "Pilih Semua" status
+      const selectAllCb = document.getElementById('exportSelectAllCb');
+      const searchVal = document.getElementById('exportItemSearch').value.toLowerCase();
+      const filteredItems = dbItemsList.filter(item => item.toLowerCase().includes(searchVal));
+      selectAllCb.checked = filteredItems.length > 0 && filteredItems.every(i => selectedExportItems.includes(i));
+    }
+
+    function toggleSelectAllExportItems(isChecked) {
+      const searchVal = document.getElementById('exportItemSearch').value.toLowerCase();
+      const filteredItems = dbItemsList.filter(item => item.toLowerCase().includes(searchVal));
+
+      if (isChecked) {
+        filteredItems.forEach(item => {
+          if (!selectedExportItems.includes(item)) {
+            selectedExportItems.push(item);
+          }
+        });
+      } else {
+        selectedExportItems = selectedExportItems.filter(item => !filteredItems.includes(item));
+      }
+
+      renderExportItemCheckboxes();
     }
 
     function updateExportItemCount() {
-      document.getElementById('exportItemCount').innerText = `Terpilih: ${selectedExportItems.length}/5`;
+      document.getElementById('exportItemCount').innerText = `Terpilih: ${selectedExportItems.length}/${dbItemsList.length}`;
     }
 
     // Dynamic Export CSV Process with Query Filtering
@@ -958,12 +970,11 @@
       try {
         const startDate = document.getElementById('exportStartDate').value;
         const endDate = document.getElementById('exportEndDate').value;
-        const project = document.getElementById('exportProjectSelect').value;
 
         // Construct query Supabase
         let query = _supabase.from('inventory').select('*').order('no', { ascending: true });
 
-        // Filter 1: Items (Max 5 multi-select)
+        // Filter 1: Items (Tanpa batasan jumlah)
         if (selectedExportItems.length > 0) {
           query = query.in('item', selectedExportItems);
         }
@@ -974,11 +985,6 @@
         }
         if (endDate) {
           query = query.lte('date', endDate);
-        }
-
-        // Filter 3: Project
-        if (project) {
-          query = query.eq('project', project);
         }
 
         const { data, error } = await query;
