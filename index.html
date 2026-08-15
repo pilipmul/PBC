@@ -64,6 +64,8 @@
         textarea.desc { overflow-y: hidden; padding-top: 6px; padding-right: 25px; }
         
         .btn-group { display: flex; gap: 8px; margin-top: 10px; justify-content: center; position: relative; align-items: center; }
+        
+        /* Modifikasi .add-row: Menghilangkan bayangan dan latar belakang */
         .add-row { 
             background-color: transparent; 
             border: none; 
@@ -73,7 +75,8 @@
             display: flex; 
             justify-content: center; 
             align-items: center; 
-            box-shadow: none; /* <-- TAMBAHKAN INI */
+            box-shadow: none; 
+            outline: none;
         }
         
         button { 
@@ -189,7 +192,8 @@
                 </div>
                 <div class="qty-wrapper">
                     <span class="stock-overlay"></span>
-                    <input type="number" class="qty" min="1" placeholder="Qty" required>
+                    <!-- Penambahan pembatas angka pada elemen input Qty -->
+                    <input type="number" class="qty" min="1" placeholder="Qty" inputmode="numeric" pattern="[0-9]*" onkeydown="preventNonNumeric(event)" required>
                 </div>
                 <div style="position: relative;">
                     <textarea class="desc" placeholder="Notes" onmousedown="startLongPress(event, this)" onmouseup="cancelLongPress()" onmouseleave="cancelLongPress()" ontouchstart="startLongPress(event, this)" ontouchend="cancelLongPress()"></textarea>
@@ -224,6 +228,20 @@
     }
 
     let nameData = [], itemData = [], itemStock = {}, lastTransactions = [], gaMode = false, activeTextarea = null, longPressTimer, passAction = "", currentMode = "", currentItems = [], currentName = "";
+
+    // Fungsi pencegah pengetikan karakter selain angka (0-9)
+    function preventNonNumeric(e) {
+        if ([46, 8, 9, 27, 13].indexOf(e.keyCode) !== -1 ||
+            (e.keyCode === 65 && (e.ctrlKey === true || e.metaKey === true)) ||
+            (e.keyCode === 67 && (e.ctrlKey === true || e.metaKey === true)) ||
+            (e.keyCode === 86 && (e.ctrlKey === true || e.metaKey === true)) ||
+            (e.keyCode >= 35 && e.keyCode <= 39)) {
+            return;
+        }
+        if ((e.shiftKey || (e.keyCode < 48 || e.keyCode > 57)) && (e.keyCode < 96 || e.keyCode > 105)) {
+            e.preventDefault();
+        }
+    }
 
     function clearInput(e, btn) { e.preventDefault(); const inp = btn.parentElement.querySelector('input'); inp.value = ''; const list = btn.parentElement.querySelector('.autocomplete-list'); if(list) list.style.display = 'none'; inp.focus(); refreshAllStockOverlays(); }
     function startLongPress(e, el) { activeTextarea = el; longPressTimer = setTimeout(() => { document.getElementById("descPopupInput").value = el.value; document.getElementById("descPopup").style.display = "flex"; document.getElementById("descPopupInput").focus(); }, 600); }
@@ -271,7 +289,6 @@
         });
     }
 
-    // AMBIL DATA DARI SUPABASE DENGAN SKEMA TABEL 'users', 'item', DAN 'inventory'
     async function fetchDataAndUpdateUI() { 
         if (!supabaseClient) {
             showToast("⚠️ Supabase Client gagal dimuat");
@@ -282,7 +299,6 @@
         if(icon) icon.classList.add("spinning"); 
 
         try { 
-            // 1. Ambil nama user dari tabel "users" (kolom 'nama')
             const { data: dbUsers, error: errUsers } = await supabaseClient
                 .from('users')
                 .select('nama');
@@ -292,7 +308,6 @@
                 userList = dbUsers.map(u => u.nama).filter(Boolean);
             }
 
-            // 2. Ambil nama item dan balance dari tabel "item"
             const { data: dbItems, error: errItem } = await supabaseClient
                 .from('item')
                 .select('item, balance');
@@ -302,7 +317,6 @@
             if (dbItems) {
                 itemData = [...new Set(dbItems.map(d => d.item).filter(Boolean))];
                 
-                // Isi itemStock dengan pasangan item -> balance
                 itemStock = {};
                 dbItems.forEach(d => {
                     if (d.item) {
@@ -311,7 +325,6 @@
                 });
             }
 
-            // 3. Ambil riwayat transaksi terakhir dari tabel "inventory"
             const { data: trxData, error: errTrx } = await supabaseClient
                 .from('inventory')
                 .select('user, item, in, out, date, note')
@@ -374,7 +387,6 @@
             updateOverlay(); 
             if (!val) { box.style.display = "none"; return; } 
             
-            // PERUBAHAN 1: Jika bukan GA Mode, saring item yang stoknya > 0 saja
             let sourceData = data;
             if (isItem && !gaMode) {
                 sourceData = data.filter(d => (itemStock[d] || 0) > 0);
@@ -406,7 +418,6 @@
         
         if (!currentItems.length) return showToast("⚠️ Isi Item!"); 
 
-        // PERUBAHAN 2: Cek apakah item sesuai dengan saran/database
         const invalidItem = currentItems.find(it => !itemData.includes(it.item));
         if (invalidItem) {
             return showToast("⚠️ Item tidak sesuai database!");
@@ -500,6 +511,11 @@
         if (container.children.length < 5) { 
             const clone = container.children[0].cloneNode(true); 
             clone.querySelectorAll("input, textarea").forEach(i => i.value = ""); 
+            
+            // Hubungkan pencegah input non-angka pada baris baru
+            const qtyInp = clone.querySelector("input.qty");
+            if (qtyInp) qtyInp.onkeydown = preventNonNumeric;
+
             clone.querySelector(".stock-overlay").style.display = "none"; 
             clone.querySelector(".autocomplete-list").style.display = "none"; 
             const tx = clone.querySelector("textarea.desc"); 
