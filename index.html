@@ -76,12 +76,15 @@
             align-items: center; 
             box-shadow: none; 
             outline: none;
-            -webkit-tap-highlight-color: transparent; /* Menghapus sorotan tap default browser */
+            -webkit-tap-highlight-color: transparent; /* Hilangkan highlight bawaan browser mobile */
+            -webkit-touch-callout: none;
+            user-select: none;
         }
         
-        /* Memastikan tombol kembali ke state normal setelah dilepas/tap di mobile */
+        /* Memastikan tidak ada background/outline biru saat status focus atau active */
         .add-row:focus, 
-        .add-row:active {
+        .add-row:active,
+        .add-row:focus-visible {
             background-color: transparent !important;
             outline: none !important;
             box-shadow: none !important;
@@ -523,7 +526,7 @@
     }
 
     document.getElementById("addRow").onclick = function(e) { 
-        this.blur(); // Melepas fokus seketika setelah ditekan di mobile
+        this.blur(); // Melepas status focus langsung di perangkat mobile
         
         const container = document.getElementById("itemContainer"); 
         const btnAdd = document.getElementById("addRow"); 
