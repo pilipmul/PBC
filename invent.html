@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <script>
+    (function() {
+      try {
+        // 1. Ambil data session dari localStorage
+        const session = localStorage.getItem("user");
+        
+        // 2. Jika session kosong, kembalikan ke login
+        if (!session) {
+          window.location.replace("https://pilipmul.github.io/SOT/login.html");
+          return;
+        }
+
+        const userData = JSON.parse(session);
+        
+        // 3. Jika struktur userData tidak valid
+        if (!userData) {
+          window.location.replace("https://pilipmul.github.io/SOT/login.html");
+          return;
+        }
+
+        // 4. Jika ada objek akses, periksa apakah akun memiliki hak akses
+        if (userData.akses) {
+          const aks = userData.akses;
+          // Memeriksa izin dari berbagai kemungkinan nama atribut (inventory/log/acces)
+          const punyaAkses = (aks.inventory === "Y" || aks.log === "Y" || aks.acces === "Y" || aks.accesControl === "Y");
+          
+          if (!punyaAkses) {
+            alert("Anda tidak memiliki hak akses ke modul Inventory.");
+            window.location.replace("https://pilipmul.github.io/SOT/login.html");
+          }
+        }
+      } catch (err) {
+        console.error("Autentikasi gagal:", err);
+        window.location.replace("https://pilipmul.github.io/SOT/login.html");
+      }
+    })();
+  </script>
+
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Inventory Management</title>
+  
+  <!-- Tailwind CSS v4 CDN -->
+  <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+  
+  <!-- Supabase JS CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  
+  <style>
+    /* Menghilangkan scrollbar horizontal dan mengoptimalkan pembungkusan teks */
+    body { overflow-x: hidden; }
+    table { table-layout: fixed; width: 100%; }
+    
+    /* Custom Scrollbar untuk Popover Filter & Suggestion List */
+    .filter-scroll::-webkit-scrollbar, .suggest-scroll::-webkit-scrollbar {
+      width: 4px;
+    }
+    .filter-scroll::-webkit-scrollbar-thumb, .suggest-scroll::-webkit-scrollbar-thumb {
+      background: #475569;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen font-sans p-2 sm:p-4">
+
+  <div class="w-full mx-auto space-y-4">
+    
+    <!-- Header Section -->
+    <div class="flex justify-between items-center bg-slate-800 p-3 sm:p-4 rounded-xl border border-slate-700 shadow-lg">
+      <div class="flex items-center gap-3">
+        <a href="https://pilipmul.github.io/SOT/dashboard.html" 
+           title="Kembali ke Dashboard"
+           class="inline-flex items-center justify-center w-9 h-9 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg transition">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+        </a>
+        <div>
+          <h1 class="text-base sm:text-lg font-bold text-white leading-tight">Inventory Transactions</h1>
+          <p class="text-xs text-slate-400">Kelola data transaksi masuk & keluar</p>
+        </div>
+      </div>
+
+      <!-- Hamburger Button (Kanan Atas, Kecil) -->
+      <div class="relative">
+        <button id="btnHamburger" onclick="toggleMainMenu(event)" title="Menu Navigasi"
+                class="inline-flex items-center justify-center w-8 h-8 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg transition shadow">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+          </svg>
+        </button>
+
+        <!-- Dropdown Menu Item -->
+        <div id="mainMenuDropdown" class="hidden absolute right-0 mt-2 w-48 bg-slate-800 border border-slate-700 rounded-xl shadow-2xl p-1.5 z-50 text-xs">
+          <button onclick="openModal('add'); closeMainMenu();" 
+                  class="w-full flex items-center gap-2.5 px-3 py-2 text-left hover:bg-indigo-600 text-slate-200 hover:text-white rounded-lg transition">
+            <svg class="w-4 h-4 text-indigo-400 group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+            <span>Tambah Item</span>
+          </button>
+          
+          <button onclick="exportCSV(); closeMainMenu();" 
+                  class="w-full flex items-center gap-2.5 px-3 py-2 text-left hover:bg-emerald-600 text-slate-200 hover:text-white rounded-lg transition">
+            <svg class="w-4 h-4 text-emerald-400 group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+            </svg>
+            <span>Download CSV</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Table Section -->
+    <div class="bg-slate-800 rounded-xl border border-slate-700 shadow-lg overflow-hidden w-full">
+      <table class="w-full text-left border-collapse text-xs">
+        <thead>
+          <tr class="bg-slate-700/50 text-slate-300 uppercase tracking-wider border-b border-slate-700">
+            <!-- Menambahkan Fitur Filter & Sort pada Kolom NO -->
+            <th class="p-2 w-[5%] relative text-center">
+              <div class="flex items-center justify-between gap-0.5">
+                <span class="truncate">No</span>
+                <button onclick="toggleFilterMenu('no', event)" class="p-0.5 hover:bg-slate-600 rounded text-[7px] leading-none text-slate-400 hover:text-white" title="Filter & Sort">▼</button>
+              </div>
+            </th>
+
+            <th class="p-2 w-[11%] relative">
+              <div class="flex items-center justify-between gap-0.5">
+                <span class="truncate">Nama</span>
+                <button onclick="toggleFilterMenu('user', event)" class="p-0.5 hover:bg-slate-600 rounded text-[7px] leading-none text-slate-400 hover:text-white" title="Filter & Sort">▼</button>
+              </div>
+            </th>
+
+            <th class="p-2 w-[21%] relative">
+              <div class="flex items-center justify-between gap-0.5">
+                <span class="truncate">Item</span>
+                <button onclick="toggleFilterMenu('item', event)" class="p-0.5 hover:bg-slate-600 rounded text-[7px] leading-none text-slate-400 hover:text-white" title="Filter & Sort">▼</button>
+              </div>
+            </th>
+
+            <th class="p-2 w-[5%] text-center relative">
+              <div class="flex items-center justify-between gap-0.5">
+                <span class="truncate">In</span>
+                <button onclick="toggleFilterMenu('in', event)" class="p-0.5 hover:bg-slate-600 rounded text-[7px] leading-none text-slate-400 hover:text-white" title="Filter & Sort">▼</button>
+              </div>
+            </th>
+
+            <th class="p-2 w-[5%] text-center relative">
+              <div class="flex items-center justify-between gap-0.5">
+                <span class="truncate">Out</span>
+                <button onclick="toggleFilterMenu('out', event)" class="p-0.5 hover:bg-slate-600 rounded text-[7px] leading-none text-slate-400 hover:text-white" title="Filter & Sort">▼</button>
+              </div>
+            </th>
+
+            <th class="p-2 w-[9%] relative">
+              <div class="flex items-center justify-between gap-0.5">
+                <span class="truncate">Date</span>
+                <button onclick="toggleFilterMenu('date', event)" class="p-0.5 hover:bg-slate-600 rounded text-[7px] leading-none text-slate-400 hover:text-white" title="Filter & Sort">▼</button>
+              </div>
+            </th>
+
+            <th class="p-2 w-[20%] relative">
+              <div class="flex items-center justify-between gap-0.5">
+                <span class="truncate">Desc (Note)</span>
+                <button onclick="toggleFilterMenu('note', event)" class="p-0.5 hover:bg-slate-600 rounded text-[7px] leading-none text-slate-400 hover:text-white" title="Filter & Sort">▼</button>
+              </div>
+            </th>
+
+            <th class="p-2 w-[10%] relative">
+              <div class="flex items-center justify-between gap-0.5">
+                <span class="truncate">Trx Code</span>
+                <button onclick="toggleFilterMenu('trx_code', event)" class="p-0.5 hover:bg-slate-600 rounded text-[7px] leading-none text-slate-400 hover:text-white" title="Filter & Sort">▼</button>
+              </div>
+            </th>
+
+            <th class="p-2 w-[6%] text-center relative">
+              <div class="flex items-center justify-between gap-0.5">
+                <span class="truncate">Stock</span>
+                <button onclick="toggleFilterMenu('balance', event)" class="p-0.5 hover:bg-slate-600 rounded text-[7px] leading-none text-slate-400 hover:text-white" title="Filter & Sort">▼</button>
+              </div>
+            </th>
+
+            <th class="p-2 w-[8%] text-center relative">
+              <div class="flex items-center justify-between gap-0.5">
+                <span class="truncate">Project</span>
+                <button onclick="toggleFilterMenu('project', event)" class="p-0.5 hover:bg-slate-600 rounded text-[7px] leading-none text-slate-400 hover:text-white" title="Filter & Sort">▼</button>
+              </div>
+            </th>
+          </tr>
+        </thead>
+        <tbody id="tableBody" class="divide-y divide-slate-700/50">
+          <tr>
+            <td colspan="10" class="p-6 text-center text-slate-400">Memuat data...</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Dynamic Filter Dropdown Popover -->
+      <div id="filterPopover" class="fixed hidden z-50 w-60 bg-slate-800 border border-slate-700 rounded-xl shadow-2xl p-3 text-xs lowercase">
+        <div class="grid grid-cols-2 gap-2 mb-3 border-b border-slate-700 pb-3 normal-case">
+          <button onclick="applySort('asc')" class="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-slate-700/60 hover:bg-indigo-600 text-slate-200 hover:text-white rounded-lg transition font-medium text-xs">
+            <span>↑</span>
+            <span>A-Z</span>
+          </button>
+          <button onclick="applySort('desc')" class="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-slate-700/60 hover:bg-indigo-600 text-slate-200 hover:text-white rounded-lg transition font-medium text-xs">
+            <span>↓</span>
+            <span>Z-A</span>
+          </button>
+        </div>
+
+        <div class="space-y-2 normal-case">
+          <input type="text" id="filterSearchInput" oninput="renderFilterCheckboxes()" placeholder="Cari item..." 
+                 class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-100 focus:outline-none focus:border-indigo-500 text-xs" />
+          
+          <div class="flex justify-between items-center text-[11px] text-slate-400 px-1">
+            <label class="flex items-center gap-1.5 cursor-pointer">
+              <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAllFilters(this.checked)" class="rounded bg-slate-900 border-slate-700 text-indigo-600 focus:ring-0" />
+              Pilih Semua
+            </label>
+            <button onclick="clearFilterColumn()" class="text-indigo-400 hover:text-indigo-300">Reset</button>
+          </div>
+
+          <div id="filterItemsList" class="max-h-36 overflow-y-auto filter-scroll space-y-1 pr-1 border border-slate-700/50 rounded-lg p-1.5 bg-slate-900/50">
+          </div>
+
+          <div class="flex gap-2 pt-2 border-t border-slate-700">
+            <button onclick="closeFilterPopover()" class="w-1/2 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg font-medium">Batal</button>
+            <button onclick="applyFilter()" class="w-1/2 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-medium">Terapkan</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pagination Footer -->
+      <div class="flex flex-col sm:flex-row justify-between items-center p-3 bg-slate-800 border-t border-slate-700 text-xs gap-3">
+        <span id="pageInfo" class="text-slate-400">Menampilkan 0 data</span>
+        
+        <div class="flex items-center gap-3">
+          <div class="flex items-center gap-1.5 text-slate-400">
+            <span>Hal:</span>
+            <input type="number" id="jumpPageInput" min="1" 
+                   onkeydown="if(event.key==='Enter') jumpToPage()"
+                   class="w-12 bg-slate-900 border border-slate-700 rounded px-1.5 py-1 text-center text-slate-100 focus:outline-none focus:border-indigo-500" />
+            <span id="totalPagesText">/ 1</span>
+            <button onclick="jumpToPage()" 
+                    class="px-2 py-1 bg-indigo-600/30 hover:bg-indigo-600 text-indigo-300 hover:text-white rounded border border-indigo-500/30 transition">
+              Go
+            </button>
+          </div>
+
+          <div class="inline-flex gap-1.5">
+            <button id="btnPrev" onclick="changePage(-1)" 
+                    class="px-2.5 py-1 bg-slate-700 hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed rounded text-slate-200 font-medium">
+              Prev
+            </button>
+            <button id="btnNext" onclick="changePage(1)" 
+                    class="px-2.5 py-1 bg-slate-700 hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed rounded text-slate-200 font-medium">
+              Next
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Modal Form Add/Edit CRUD -->
+  <div id="modal" class="fixed inset-0 bg-black/70 hidden backdrop-blur-sm flex justify-center items-center p-4 z-50">
+    <div class="bg-slate-800 border border-slate-700 rounded-xl p-5 w-full max-w-md shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+      <h3 id="modalTitle" class="text-base font-bold text-white">Form Transaksi</h3>
+      
+      <form id="inventoryForm" onsubmit="saveData(event)" class="space-y-3 text-xs" autocomplete="off">
+        <input type="hidden" id="editNo" />
+        
+        <!-- Input User dengan Autocomplete Suggestion -->
+        <div class="relative">
+          <label class="block font-medium text-slate-300 mb-1">Nama (User)</label>
+          <input type="text" id="inputUser" oninput="handleUserSuggest()"
+                 class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-slate-100 focus:outline-none focus:border-indigo-500" 
+                 placeholder="Ketik untuk mencari nama..." />
+          <div id="userSuggestList" class="hidden absolute left-0 right-0 top-full mt-1 bg-slate-900 border border-slate-700 rounded-lg shadow-xl max-h-36 overflow-y-auto suggest-scroll z-50 divide-y divide-slate-800"></div>
+        </div>
+
+        <!-- Input Item dengan Autocomplete Suggestion -->
+        <div class="relative">
+          <label class="block font-medium text-slate-300 mb-1">Item</label>
+          <input type="text" id="inputItem" required oninput="handleItemSuggest()"
+                 class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-slate-100 focus:outline-none focus:border-indigo-500" 
+                 placeholder="Ketik untuk mencari item..." />
+          <div id="itemSuggestList" class="hidden absolute left-0 right-0 top-full mt-1 bg-slate-900 border border-slate-700 rounded-lg shadow-xl max-h-36 overflow-y-auto suggest-scroll z-50 divide-y divide-slate-800"></div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-medium text-slate-300 mb-1">In</label>
+            <input type="number" id="inputIn" min="0" placeholder="0" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-slate-100 focus:outline-none focus:border-indigo-500" />
+          </div>
+          <div>
+            <label class="block font-medium text-slate-300 mb-1">Out</label>
+            <input type="number" id="inputOut" min="0" placeholder="0" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-slate-100 focus:outline-none focus:border-indigo-500" />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-medium text-slate-300 mb-1">Date</label>
+            <input type="date" id="inputDate" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-slate-100 focus:outline-none focus:border-indigo-500" />
+          </div>
+          <div>
+            <label class="block font-medium text-slate-300 mb-1">Trx Code</label>
+            <input type="text" id="inputTrxCode" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-slate-100 focus:outline-none focus:border-indigo-500" />
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-medium text-slate-300 mb-1">Desc (Note)</label>
+          <textarea id="inputNote" rows="2" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-slate-100 focus:outline-none focus:border-indigo-500"></textarea>
+        </div>
+
+        <div class="flex justify-between items-center pt-3 border-t border-slate-700">
+          <div>
+            <button type="button" id="btnDeleteInModal" onclick="deleteDataInModal()" 
+                    class="px-3 py-1.5 bg-rose-600/20 hover:bg-rose-600/40 text-rose-400 hover:text-rose-300 border border-rose-500/30 rounded-lg font-medium hidden">
+              🗑️ Hapus
+            </button>
+          </div>
+          <div class="flex gap-2">
+            <button type="button" onclick="closeModal()" class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg font-medium">
+              Batal
+            </button>
+            <button type="submit" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-medium">
+              Simpan
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://sfblelnbczlvykqemhtm.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_9k7sUNqlqhRqjkUtSNpFPQ_VAspSZT0';
+    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const PAGE_SIZE = 200;
+    let currentPage = 1;
+    let totalRows = 0;
+    let rawDataMap = new Map();
+    let fetchedData = [];
+
+    // Cache database suggestions
+    let dbUsersList = [];
+    let dbItemsList = [];
+
+    // Filter & Sort States
+    let activeFilterColumn = null;
+    let filterSelections = {}; 
+    let sortConfig = { column: null, direction: null };
+
+    document.addEventListener('DOMContentLoaded', () => {
+      fetchTableData();
+      preloadSuggestions();
+    
+      // MENDENGARKAN PERUBAHAN DATA SECARA REALTIME
+      _supabase
+        .channel('public:inventory')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'inventory' }, (payload) => {
+          fetchTableData();
+        })
+        .subscribe();
+    });
+    
+    // Toggle Menu Hamburger Dropdown
+    function toggleMainMenu(event) {
+      event.stopPropagation();
+      const menu = document.getElementById('mainMenuDropdown');
+      menu.classList.toggle('hidden');
+    }
+
+    function closeMainMenu() {
+      document.getElementById('mainMenuDropdown').classList.add('hidden');
+    }
+
+    // Close popovers & suggestion lists when clicking outside
+    document.addEventListener('click', (e) => {
+      const mainDropdown = document.getElementById('mainMenuDropdown');
+      if (mainDropdown && !mainDropdown.classList.contains('hidden') && !mainDropdown.contains(e.target) && !e.target.closest('#btnHamburger')) {
+        closeMainMenu();
+      }
+
+      const popover = document.getElementById('filterPopover');
+      if (!popover.classList.contains('hidden') && !popover.contains(e.target) && !e.target.closest('button[onclick*="toggleFilterMenu"]')) {
+        closeFilterPopover();
+      }
+
+      if (!e.target.closest('#inputUser') && !e.target.closest('#userSuggestList')) {
+        document.getElementById('userSuggestList').classList.add('hidden');
+      }
+      if (!e.target.closest('#inputItem') && !e.target.closest('#itemSuggestList')) {
+        document.getElementById('itemSuggestList').classList.add('hidden');
+      }
+    });
+
+    // Load master users & items data for quick suggestion search
+    async function preloadSuggestions() {
+      try {
+        const [usersRes, itemsRes] = await Promise.all([
+          _supabase.from('users').select('nama').order('nama', { ascending: true }),
+          _supabase.from('item').select('item').order('item', { ascending: true })
+        ]);
+
+        if (usersRes.data) {
+          dbUsersList = Array.from(new Set(usersRes.data.map(u => u.nama).filter(Boolean)));
+        }
+        if (itemsRes.data) {
+          dbItemsList = Array.from(new Set(itemsRes.data.map(i => i.item).filter(Boolean)));
+        }
+      } catch (err) {
+        console.error('Gagal mengambil data referensi saran:', err);
+      }
+    }
+
+    // Auto-suggest handlers for User
+    function handleUserSuggest() {
+      const inputVal = document.getElementById('inputUser').value.trim().toLowerCase();
+      const listEl = document.getElementById('userSuggestList');
+      
+      if (!inputVal) {
+        listEl.classList.add('hidden');
+        listEl.innerHTML = '';
+        return;
+      }
+
+      const filtered = dbUsersList.filter(name => name.toLowerCase().includes(inputVal));
+
+      if (filtered.length === 0) {
+        listEl.classList.add('hidden');
+        return;
+      }
+
+      listEl.innerHTML = '';
+      filtered.forEach(name => {
+        const itemDiv = document.createElement('div');
+        itemDiv.className = 'px-3 py-1.5 hover:bg-indigo-600 hover:text-white text-slate-200 cursor-pointer transition';
+        itemDiv.innerText = name;
+        itemDiv.onclick = () => {
+          document.getElementById('inputUser').value = name;
+          listEl.classList.add('hidden');
+        };
+        listEl.appendChild(itemDiv);
+      });
+
+      listEl.classList.remove('hidden');
+    }
+
+    // Auto-suggest handlers for Item
+    function handleItemSuggest() {
+      const inputVal = document.getElementById('inputItem').value.trim().toLowerCase();
+      const listEl = document.getElementById('itemSuggestList');
+      
+      if (!inputVal) {
+        listEl.classList.add('hidden');
+        listEl.innerHTML = '';
+        return;
+      }
+
+      const filtered = dbItemsList.filter(item => item.toLowerCase().includes(inputVal));
+
+      if (filtered.length === 0) {
+        listEl.classList.add('hidden');
+        return;
+      }
+
+      listEl.innerHTML = '';
+      filtered.forEach(item => {
+        const itemDiv = document.createElement('div');
+        itemDiv.className = 'px-3 py-1.5 hover:bg-indigo-600 hover:text-white text-slate-200 cursor-pointer transition';
+        itemDiv.innerText = item;
+        itemDiv.onclick = () => {
+          document.getElementById('inputItem').value = item;
+          listEl.classList.add('hidden');
+        };
+        listEl.appendChild(itemDiv);
+      });
+
+      listEl.classList.remove('hidden');
+    }
+
+    async function fetchTableData() {
+      const tbody = document.getElementById('tableBody');
+      tbody.innerHTML = `<tr><td colspan="10" class="p-6 text-center text-slate-400">Memuat data...</td></tr>`;
+
+      try {
+        const { count, error: countErr } = await _supabase
+          .from('inventory')
+          .select('*', { count: 'exact', head: true });
+        
+        if (countErr) throw countErr;
+        totalRows = count || 0;
+
+        if (totalRows === 0) {
+          tbody.innerHTML = `<tr><td colspan="10" class="p-6 text-center text-slate-400">Belum ada transaksi.</td></tr>`;
+          updatePaginationUI();
+          return;
+        }
+
+        const totalPages = Math.ceil(totalRows / PAGE_SIZE);
+        if (currentPage > totalPages) currentPage = totalPages;
+
+        const fromIndex = Math.max(0, totalRows - (currentPage * PAGE_SIZE));
+        const toIndex = totalRows - ((currentPage - 1) * PAGE_SIZE) - 1;
+
+        const { data, error } = await _supabase
+          .from('inventory')
+          .select('*')
+          .order('no', { ascending: true })
+          .range(fromIndex, toIndex);
+
+        if (error) throw error;
+
+        fetchedData = data || [];
+        rawDataMap.clear();
+        fetchedData.forEach(row => rawDataMap.set(row.no, row));
+
+        renderTable();
+
+      } catch (err) {
+        alert('Gagal mengambil data: ' + err.message);
+      }
+    }
+
+    function renderTable() {
+      const tbody = document.getElementById('tableBody');
+      tbody.innerHTML = '';
+
+      let processedData = fetchedData.filter(row => {
+        for (const colKey in filterSelections) {
+          const selectedValues = filterSelections[colKey];
+          if (selectedValues && selectedValues.length > 0) {
+            const rowVal = String(row[colKey] ?? '-').toLowerCase();
+            const match = selectedValues.some(val => val.toLowerCase() === rowVal);
+            if (!match) return false;
+          }
+        }
+        return true;
+      });
+
+      if (sortConfig.column && sortConfig.direction) {
+        processedData.sort((a, b) => {
+          let valA = a[sortConfig.column] ?? '';
+          let valB = b[sortConfig.column] ?? '';
+
+          if (typeof valA === 'number' && typeof valB === 'number') {
+            return sortConfig.direction === 'asc' ? valA - valB : valB - valA;
+          }
+
+          valA = String(valA).toLowerCase();
+          valB = String(valB).toLowerCase();
+
+          if (valA < valB) return sortConfig.direction === 'asc' ? -1 : 1;
+          if (valA > valB) return sortConfig.direction === 'asc' ? 1 : -1;
+          return 0;
+        });
+      }
+
+      if (processedData.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="10" class="p-6 text-center text-slate-400">Tidak ada data yang sesuai filter.</td></tr>`;
+        updatePaginationUI();
+        return;
+      }
+
+      processedData.forEach(row => {
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-700/30 border-b border-slate-700/50 text-slate-300';
+        
+        const projectText = row.project ? escapeHtml(row.project) : 'Edit';
+        const projectBtn = `<button onclick="openModalForNo(${row.no})" title="Edit Transaksi #${row.no}" class="w-full px-1.5 py-0.5 bg-indigo-600/30 hover:bg-indigo-600/60 text-indigo-300 hover:text-white rounded border border-indigo-500/40 text-[11px] truncate transition">${projectText}</button>`;
+
+        tr.innerHTML = `
+          <td class="p-2 text-center font-mono text-slate-400">${row.no}</td>
+          <td class="p-2 truncate" title="${escapeHtml(row.user || '')}">${escapeHtml(row.user || '-')}</td>
+          <td class="p-2 font-medium text-white break-words">${escapeHtml(row.item || '-')}</td>
+          <td class="p-2 text-center text-emerald-400 font-medium">${row.in ?? ''}</td>
+          <td class="p-2 text-center text-rose-400 font-medium">${row.out ?? ''}</td>
+          <td class="p-2 font-mono text-slate-400 truncate">${escapeHtml(row.date || '-')}</td>
+          <td class="p-2 text-slate-400 break-words">${escapeHtml(row.note || '-')}</td>
+          <td class="p-2 font-mono text-slate-400 break-all">${escapeHtml(row.trx_code || '-')}</td>
+          <td class="p-2 text-center text-slate-200 bg-slate-800/40 font-semibold">${row.balance ?? '-'}</td>
+          <td class="p-2 text-center bg-slate-800/20">${projectBtn}</td>
+        `;
+        
+        tbody.appendChild(tr);
+      });
+
+      updatePaginationUI();
+    }
+
+    function toggleFilterMenu(columnKey, event) {
+      event.stopPropagation();
+      activeFilterColumn = columnKey;
+      
+      const popover = document.getElementById('filterPopover');
+      const rect = event.currentTarget.getBoundingClientRect();
+
+      popover.style.top = `${rect.bottom + window.scrollY + 4}px`;
+      popover.style.left = `${Math.min(rect.left + window.scrollX - 180, window.innerWidth - 250)}px`;
+      
+      document.getElementById('filterSearchInput').value = '';
+      document.getElementById('selectAllCheckbox').checked = true;
+
+      renderFilterCheckboxes();
+      popover.classList.remove('hidden');
+    }
+
+    function closeFilterPopover() {
+      document.getElementById('filterPopover').classList.add('hidden');
+    }
+
+    function renderFilterCheckboxes() {
+      const container = document.getElementById('filterItemsList');
+      const searchVal = document.getElementById('filterSearchInput').value.toLowerCase();
+      container.innerHTML = '';
+
+      if (!activeFilterColumn) return;
+
+      const uniqueValues = Array.from(new Set(fetchedData.map(r => String(r[activeFilterColumn] ?? '-'))));
+      const activeSelections = filterSelections[activeFilterColumn] || uniqueValues;
+
+      const filteredValues = uniqueValues.filter(val => val.toLowerCase().includes(searchVal));
+
+      if (filteredValues.length === 0) {
+        container.innerHTML = `<span class="text-slate-500 italic text-[11px] block p-1">Item tidak ditemukan</span>`;
+        return;
+      }
+
+      filteredValues.forEach(val => {
+        const isChecked = activeSelections.includes(val);
+        const label = document.createElement('label');
+        label.className = 'flex items-center gap-2 text-slate-300 hover:text-white cursor-pointer text-[11px] truncate';
+        label.innerHTML = `
+          <input type="checkbox" value="${escapeHtml(val)}" ${isChecked ? 'checked' : ''} 
+                 class="filter-item-checkbox rounded bg-slate-900 border-slate-700 text-indigo-600 focus:ring-0" />
+          <span class="truncate" title="${escapeHtml(val)}">${escapeHtml(val)}</span>
+        `;
+        container.appendChild(label);
+      });
+    }
+
+    function toggleSelectAllFilters(isChecked) {
+      const checkboxes = document.querySelectorAll('.filter-item-checkbox');
+      checkboxes.forEach(cb => cb.checked = isChecked);
+    }
+
+    function applyFilter() {
+      const checkboxes = document.querySelectorAll('.filter-item-checkbox:checked');
+      const selected = Array.from(checkboxes).map(cb => cb.value);
+
+      filterSelections[activeFilterColumn] = selected;
+      renderTable();
+      closeFilterPopover();
+    }
+
+    function clearFilterColumn() {
+      delete filterSelections[activeFilterColumn];
+      renderTable();
+      closeFilterPopover();
+    }
+
+    function applySort(direction) {
+      sortConfig = { column: activeFilterColumn, direction: direction };
+      renderTable();
+      closeFilterPopover();
+    }
+
+    function updatePaginationUI() {
+      const totalPages = Math.ceil(totalRows / PAGE_SIZE) || 1;
+      const startNo = Math.max(1, totalRows - (currentPage * PAGE_SIZE) + 1);
+      const endNo = totalRows - ((currentPage - 1) * PAGE_SIZE);
+
+      document.getElementById('pageInfo').innerText = 
+        `Menampilkan ${startNo} - ${Math.max(startNo, endNo)} dari ${totalRows}`;
+
+      document.getElementById('jumpPageInput').value = currentPage;
+      document.getElementById('jumpPageInput').max = totalPages;
+      document.getElementById('totalPagesText').innerText = `/ ${totalPages}`;
+
+      document.getElementById('btnPrev').disabled = currentPage >= totalPages;
+      document.getElementById('btnNext').disabled = currentPage <= 1;
+    }
+
+    function changePage(direction) {
+      currentPage += direction;
+      fetchTableData();
+    }
+
+    function jumpToPage() {
+      const inputEl = document.getElementById('jumpPageInput');
+      let targetPage = parseInt(inputEl.value);
+      const totalPages = Math.ceil(totalRows / PAGE_SIZE) || 1;
+
+      if (isNaN(targetPage) || targetPage < 1) targetPage = 1;
+      if (targetPage > totalPages) targetPage = totalPages;
+
+      currentPage = targetPage;
+      fetchTableData();
+    }
+
+    function openModalForNo(no) {
+      const row = rawDataMap.get(no);
+      if (row) {
+        openModal('edit', row);
+      }
+    }
+
+    function openModal(mode, row = null) {
+      document.getElementById('inventoryForm').reset();
+      document.getElementById('editNo').value = '';
+      document.getElementById('userSuggestList').classList.add('hidden');
+      document.getElementById('itemSuggestList').classList.add('hidden');
+      
+      const deleteBtn = document.getElementById('btnDeleteInModal');
+
+      if (mode === 'edit' && row) {
+        document.getElementById('modalTitle').innerText = 'Edit Transaksi #' + row.no;
+        document.getElementById('editNo').value = row.no;
+        document.getElementById('inputUser').value = row.user || '';
+        document.getElementById('inputItem').value = row.item || '';
+        document.getElementById('inputIn').value = row.in !== null && row.in !== undefined ? row.in : '';
+        document.getElementById('inputOut').value = row.out !== null && row.out !== undefined ? row.out : '';
+        document.getElementById('inputDate').value = row.date || '';
+        document.getElementById('inputTrxCode').value = row.trx_code || '';
+        document.getElementById('inputNote').value = row.note || '';
+        
+        deleteBtn.classList.remove('hidden');
+      } else {
+        document.getElementById('modalTitle').innerText = 'Tambah Transaksi Baru';
+        deleteBtn.classList.add('hidden');
+      }
+
+      document.getElementById('modal').classList.remove('hidden');
+    }
+
+    function closeModal() {
+      document.getElementById('modal').classList.add('hidden');
+    }
+
+    async function saveData(e) {
+      e.preventDefault();
+      const no = document.getElementById('editNo').value;
+      const user = document.getElementById('inputUser').value;
+      const item = document.getElementById('inputItem').value;
+      const inVal = document.getElementById('inputIn').value;
+      const outVal = document.getElementById('inputOut').value;
+      const date = document.getElementById('inputDate').value;
+      const trx_code = document.getElementById('inputTrxCode').value;
+      const note = document.getElementById('inputNote').value;
+
+      const payload = {
+        user: user || null,
+        item: item,
+        in: inVal !== '' ? parseInt(inVal) : null,
+        out: outVal !== '' ? parseInt(outVal) : null,
+        date: date || null,
+        trx_code: trx_code || null,
+        note: note || null
+      };
+
+      try {
+        if (no) {
+          const { error } = await _supabase
+            .from('inventory')
+            .update(payload)
+            .eq('no', no);
+          if (error) throw error;
+        } else {
+          const { error } = await _supabase
+            .from('inventory')
+            .insert([payload]);
+          if (error) throw error;
+        }
+
+        closeModal();
+        fetchTableData();
+      } catch (err) {
+        alert('Gagal menyimpan data: ' + err.message);
+      }
+    }
+
+    async function deleteDataInModal() {
+      const no = document.getElementById('editNo').value;
+      if (!no) return;
+
+      if (!confirm(`Apakah Anda yakin ingin menghapus transaksi #${no}?`)) return;
+
+      try {
+        const { error } = await _supabase
+          .from('inventory')
+          .delete()
+          .eq('no', no);
+          
+        if (error) throw error;
+
+        closeModal();
+        fetchTableData();
+      } catch (err) {
+        alert('Gagal menghapus data: ' + err.message);
+      }
+    }
+
+    async function exportCSV() {
+      try {
+        const { data, error } = await _supabase
+          .from('inventory')
+          .select('*')
+          .order('no', { ascending: true });
+
+        if (error) throw error;
+        if (!data || data.length === 0) {
+          alert('Tidak ada data untuk diunduh');
+          return;
+        }
+
+        const headers = ['no', 'user', 'item', 'in', 'out', 'date', 'note', 'trx_code', 'balance', 'project'];
+        const csvRows = [headers.join(',')];
+
+        data.forEach(row => {
+          const values = headers.map(header => {
+            const val = row[header] ?? '';
+            return `"${String(val).replace(/"/g, '""')}"`;
+          });
+          csvRows.push(values.join(','));
+        });
+
+        const csvContent = 'data:text/csv;charset=utf-8,' + csvRows.join('\n');
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement('a');
+        link.setAttribute('href', encodedUri);
+        link.setAttribute('download', `inventory_all_${new Date().toISOString().slice(0,10)}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+      } catch (err) {
+        alert('Gagal mengunduh CSV: ' + err.message);
+      }
+    }
+
+    function escapeHtml(text) {
+      if (!text) return '';
+      return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+    }
+  </script>
+</body>
+</html>
