@@ -1,6 +1,27 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
+  <script>
+    // Verifikasi Sesi sebelum halaman dimuat
+    (function() {
+      try {
+        const session = localStorage.getItem("user");
+        if (!session) { 
+          window.location.replace("https://sotpbc.vercel.app/login.html"); 
+          return; 
+        }
+        const userData = JSON.parse(session);
+        if (!userData) { 
+          window.location.replace("https://sotpbc.vercel.app/login.html"); 
+          return; 
+        }
+        window.currentUser = userData.data || userData;
+      } catch (err) {
+        window.location.replace("https://sotpbc.vercel.app/login.html");
+      }
+    })();
+  </script>
+
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Access Control - SOT Portal</title>
@@ -28,11 +49,12 @@
     }
   </style>
 </head>
-<body class="bg-[#f8f9fa] dark:bg-[#202124] text-[#202124] dark:text-[#e8eaed] min-h-screen font-sans p-3 sm:p-6 flex flex-col justify-between transition-colors duration-200">
+<body class="bg-[#f8f9fa] dark:bg-[#202124] text-[#202124] dark:text-[#e8eaed] min-h-screen font-sans p-3 sm:p-6 pl-20 sm:pl-24 flex flex-col justify-between transition-colors duration-200">
 
-  <!-- Tempat Komponen Navigasi (navigasi.html) Disisipkan -->
-  <div id="navbar-placeholder" class="max-w-7xl mx-auto w-full mb-4"></div>
+  <!-- Tempat Komponen Sidebar Navigasi (navigasi.html) Disisipkan -->
+  <div id="navbar-placeholder"></div>
 
+  <!-- Notification Toast -->
   <div id="toast" class="fixed top-5 right-5 z-[100] transform translate-y-[-20px] opacity-0 pointer-events-none transition-all duration-300 flex items-center gap-3 px-4 py-3 rounded-2xl shadow-xl border text-xs max-w-md">
     <div id="toast-icon" class="p-1.5 rounded-xl text-white shrink-0"></div>
     <div>
@@ -41,6 +63,7 @@
     </div>
   </div>
 
+  <!-- Main Content Container -->
   <div class="max-w-7xl mx-auto space-y-4 w-full">
 
     <header class="bg-white dark:bg-[#2d2e30] border border-[#dadce0] dark:border-[#3c4043] rounded-2xl p-4 sm:p-5 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 transition-colors">
@@ -108,24 +131,18 @@
     <span>Powered by Supabase & Tailwind CSS v4</span>
   </footer>
 
-  <!-- SCRIPT PEMUAT KOMPONEN NAVIGASI -->
+  <!-- SCRIPT PEMUAT NAVIGATION SIDEBAR -->
   <script>
-    fetch('navigasi.html')
-      .then(res => res.text())
+    fetch('./navigasi.html')
+      .then(res => {
+        if (!res.ok) throw new Error("Gagal mengunduh navigasi.html");
+        return res.text();
+      })
       .then(html => {
         document.getElementById('navbar-placeholder').innerHTML = html;
         initNavAccess();
       })
       .catch(err => console.error('Gagal memuat navigasi:', err));
-
-    function toggleMenuDropdown(e) {
-      e.stopPropagation();
-      const menu = document.getElementById("moduleDropdownMenu");
-      if (!menu) return;
-      menu.classList.toggle("hidden");
-      menu.classList.toggle("opacity-0");
-      menu.classList.toggle("scale-95");
-    }
 
     function initNavAccess() {
       const stored = localStorage.getItem("user");
@@ -135,6 +152,14 @@
         const user = parsed.data || parsed;
         const isAdmin = (user.nama || "").trim().toLowerCase() === "dede hidayat";
         const check = (v) => isAdmin || ["Y", "TRUE", "1"].includes(String(v || "").trim().toUpperCase());
+
+        // Inisialisasi Nama & Avatar Pengguna di Navigasi
+        const namaUser = user.nama || "User";
+        const avatarEl = document.getElementById("nav-user-avatar");
+        const nameEl = document.getElementById("nav-user-name");
+        
+        if (avatarEl) avatarEl.textContent = namaUser.charAt(0).toUpperCase();
+        if (nameEl) nameEl.textContent = namaUser;
 
         const mapping = [
           { id: "nav-eskalasi", file: "eskalasi.html", allow: check(user.eskalasi) },
@@ -151,7 +176,8 @@
           const el = document.getElementById(item.id);
           if (el && item.allow) {
             el.classList.remove("hidden");
-            el.href = `${item.file}?user=${encodeURIComponent(user.nama)}`;
+            const anchor = el.querySelector("a");
+            if (anchor) anchor.href = `${item.file}?user=${encodeURIComponent(user.nama)}`;
           }
         });
       } catch(err) { console.error(err); }
