@@ -1,27 +1,6 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <script>
-    // Verifikasi Sesi sebelum halaman dimuat
-    (function() {
-      try {
-        const session = localStorage.getItem("user");
-        if (!session) { 
-          window.location.replace("https://sotpbc.vercel.app/login.html"); 
-          return; 
-        }
-        const userData = JSON.parse(session);
-        if (!userData) { 
-          window.location.replace("https://sotpbc.vercel.app/login.html"); 
-          return; 
-        }
-        window.currentUser = userData.data || userData;
-      } catch (err) {
-        window.location.replace("https://sotpbc.vercel.app/login.html");
-      }
-    })();
-  </script>
-
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Access Control - SOT Portal</title>
