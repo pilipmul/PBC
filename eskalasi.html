@@ -258,72 +258,67 @@
         }
     </style>
 </head>
-<body class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 min-h-screen transition-colors duration-200">
+<body class="bg-[#121417] text-slate-100 min-h-screen p-4 sm:p-6 transition-colors duration-200">
 
-    <!-- HEADER & NAVIGASI TERINTEGRASI -->
-    <header class="bg-slate-900 dark:bg-slate-900 text-white shadow-md sticky top-0 z-50 border-b border-slate-800">
-        <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
-            <div class="flex items-center gap-3">
-                <!-- Tombol Navigasi Dropdown Menu -->
+    <!-- HEADER DESAIN FLOATING CARD SESUAI ACUAN GAMBAR -->
+    <header class="bg-[#212429] border border-slate-700/50 rounded-2xl p-4 sm:p-5 mb-6 max-w-7xl mx-auto shadow-lg">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div class="flex items-center gap-4">
+                <!-- Tombol Navigasi Circular (Hamburger) -->
                 <div class="relative">
-                    <button id="navDropdownBtn" onclick="toggleNavDropdown(event)" class="bg-blue-600 hover:bg-blue-500 p-2 rounded-lg shadow-inner transition cursor-pointer flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-blue-400">
-                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    <button id="navDropdownBtn" onclick="toggleNavDropdown(event)" class="w-12 h-12 bg-slate-800 hover:bg-slate-700/80 text-slate-300 hover:text-white rounded-full transition flex items-center justify-center cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
                         </svg>
                     </button>
-                    <!-- Popover Dropdown Navigasi Berdasarkan Akses Pengguna -->
-                    <div id="navDropdownMenu" class="hidden absolute left-0 mt-2 w-56 bg-slate-800 border border-slate-700 rounded-xl shadow-xl py-2 z-50 text-sm">
-                        <a href="dashboard.html" class="block px-4 py-2 hover:bg-slate-700 text-slate-200">Dashboard</a>
-                        <a href="eskalasi.html" id="nav-eskalasi" class="hidden block px-4 py-2 hover:bg-slate-700 text-slate-200">Eskalasi</a>
-                        <a href="rkm.html" id="nav-rkm" class="hidden block px-4 py-2 hover:bg-slate-700 text-slate-200">RKM</a>
-                        <a href="perbaikan.html" id="nav-perbaikan" class="hidden block px-4 py-2 hover:bg-slate-700 text-slate-200">Perbaikan</a>
-                        <a href="task.html" id="nav-task" class="hidden block px-4 py-2 hover:bg-slate-700 text-slate-200">Task List</a>
-                        <a href="sync.html" id="nav-sync" class="hidden block px-4 py-2 hover:bg-slate-700 text-slate-200">Sync Flow</a>
-                        <a href="item.html" id="nav-item" class="hidden block px-4 py-2 hover:bg-slate-700 text-slate-200">Item Master</a>
-                        <a href="log.html" id="nav-log" class="hidden block px-4 py-2 hover:bg-slate-700 text-slate-200">System Log</a>
-                        <a href="acces.html" id="nav-acces" class="hidden block px-4 py-2 hover:bg-slate-700 text-slate-200">Akses Pengguna</a>
+                    <!-- Menu Dropdown Navigasi -->
+                    <div id="navDropdownMenu" class="hidden absolute left-0 mt-3 w-56 bg-[#1a1d21] border border-slate-700/80 rounded-xl shadow-2xl py-2 z-50 text-sm">
+                        <a href="dashboard.html" class="block px-4 py-2.5 hover:bg-slate-800 text-slate-200">Dashboard</a>
+                        <a href="eskalasi.html" id="nav-eskalasi" class="hidden block px-4 py-2.5 hover:bg-slate-800 text-slate-200">Eskalasi</a>
+                        <a href="rkm.html" id="nav-rkm" class="hidden block px-4 py-2.5 hover:bg-slate-800 text-slate-200">RKM</a>
+                        <a href="perbaikan.html" id="nav-perbaikan" class="hidden block px-4 py-2.5 hover:bg-slate-800 text-slate-200">Perbaikan</a>
+                        <a href="task.html" id="nav-task" class="hidden block px-4 py-2.5 hover:bg-slate-800 text-slate-200">Task List</a>
+                        <a href="sync.html" id="nav-sync" class="hidden block px-4 py-2.5 hover:bg-slate-800 text-slate-200">Sync Flow</a>
+                        <a href="item.html" id="nav-item" class="hidden block px-4 py-2.5 hover:bg-slate-800 text-slate-200">Item Master</a>
+                        <a href="log.html" id="nav-log" class="hidden block px-4 py-2.5 hover:bg-slate-800 text-slate-200">System Log</a>
+                        <a href="acces.html" id="nav-acces" class="hidden block px-4 py-2.5 hover:bg-slate-800 text-slate-200">Akses Pengguna</a>
                     </div>
                 </div>
                 <div>
-                    <h1 class="text-xl font-bold tracking-wide">SOT (Sistem Operasional Terintegrasi)</h1>
-                    <p class="text-xs text-slate-400">Modul Administrasi Budget & Eskalasi</p>
+                    <h1 class="text-xl font-bold text-white tracking-wide">Database Eskalasi</h1>
+                    <p class="text-xs text-slate-400 mt-0.5">Atur dan kelola modul eskalasi pengguna aplikasi SOT</p>
                 </div>
             </div>
-            <!-- Info Pengguna & Indikator Koneksi -->
-            <div class="text-sm text-right flex items-center gap-4">
-                <div class="hidden sm:block text-right">
-                    <p id="userDisplayName" class="text-xs font-semibold text-slate-200"></p>
-                    <p id="userRoleBadge" class="text-[10px] text-slate-400 uppercase tracking-wider"></p>
-                </div>
-                <div class="flex items-center gap-2 bg-slate-800/80 px-3 py-1.5 rounded-full border border-slate-700/50">
-                    <span id="dbStatusIndicator" class="relative flex h-2.5 w-2.5" title="Memeriksa koneksi...">
-                      <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-                      <span id="dbStatusDot" class="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500"></span>
-                    </span>
-                    <span id="dbStatusText" class="text-xs text-slate-300 font-medium">Connecting...</span>
-                </div>
+            
+            <!-- Tombol Action Refresh Data (Sesuai Referensi Gambar) -->
+            <div class="flex items-center gap-3">
+                <button onclick="loadData()" class="bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold px-5 py-2.5 rounded-full shadow-md transition flex items-center gap-2 cursor-pointer">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                    </svg>
+                    Refresh Data
+                </button>
             </div>
         </div>
     </header>
 
-    <main class="max-w-7xl mx-auto px-4 py-8">
-        <div class="bg-white dark:bg-slate-900 rounded-xl shadow-xs border border-slate-200 dark:border-slate-800 overflow-hidden transition-colors">
+    <main class="max-w-7xl mx-auto">
+        <div class="bg-[#1a1d21] rounded-2xl shadow-sm border border-slate-800 overflow-hidden transition-colors">
             <!-- Header Tabel -->
-            <div class="p-5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 flex justify-between items-center gap-4">
+            <div class="p-5 border-b border-slate-800/80 bg-[#212429]/50 flex justify-between items-center gap-4">
                 <div>
-                    <h3 class="text-base font-bold text-slate-900 dark:text-slate-100 tracking-tight">Database Data Eskalasi</h3>
-                    <p class="text-xs text-slate-500 dark:text-slate-400">Data diambil langsung dari tabel Supabase `eskalasi`</p>
+                    <h3 class="text-base font-bold text-slate-100 tracking-tight">Database Data Eskalasi</h3>
+                    <p class="text-xs text-slate-400">Data diambil langsung dari tabel Supabase `eskalasi`</p>
                 </div>
-                <a href="eskin.html" class="bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500 text-white text-xs px-4 py-2.5 rounded-lg font-medium shadow-xs transition flex items-center gap-1.5 cursor-pointer whitespace-nowrap">
+                <a href="eskin.html" class="bg-blue-600 hover:bg-blue-500 text-white text-xs px-4 py-2.5 rounded-xl font-medium shadow-xs transition flex items-center gap-1.5 cursor-pointer whitespace-nowrap">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                     Eskalasi Baru
                 </a>
             </div>
 
             <div id="tableWrapper" class="overflow-x-auto" style="position: relative;">
-                <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-800 text-left text-sm" id="eskalasiTable" style="display:none;">
-                    <thead class="bg-slate-900 dark:bg-slate-950 text-white uppercase text-xs tracking-wider">
+                <table class="min-w-full divide-y divide-slate-800 text-left text-sm" id="eskalasiTable" style="display:none;">
+                    <thead class="bg-[#0f1115] text-slate-200 uppercase text-xs tracking-wider">
                         <tr>
                             <th scope="col" class="px-6 py-4 font-semibold text-center w-16 no-filter">No</th>
                             <th scope="col" class="px-6 py-4 font-semibold">
@@ -352,7 +347,7 @@
                             </th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-slate-200 dark:divide-slate-800" id="tableBody"></tbody>
+                    <tbody class="divide-y divide-slate-800/60" id="tableBody"></tbody>
                 </table>
 
                 <div id="filterMenu" class="filter-menu">
@@ -379,14 +374,14 @@
                     </div>
                 </div>
 
-                <div id="loading" class="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
-                    <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-slate-300 dark:border-slate-700 border-t-blue-600 dark:border-t-blue-500 mb-2"></div>
+                <div id="loading" class="px-6 py-12 text-center text-slate-400">
+                    <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-slate-700 border-t-blue-500 mb-2"></div>
                     <p class="font-medium">Menghubungkan ke Supabase Database...</p>
                 </div>
             </div>
 
-            <div class="bg-slate-50 dark:bg-slate-900/80 px-6 py-4 border-t border-slate-200 dark:border-slate-800 text-xs text-slate-500 dark:text-slate-400 flex justify-between items-center">
-                <span>Data tersinkronisasi langsung via Supabase Client</span>
+            <div class="bg-[#1a1d21] px-6 py-4 border-t border-slate-800 text-xs text-slate-400 flex justify-between items-center">
+                <span id="dbStatusIndicator">Status: Connected</span>
                 <span>Power by: PBC Internal Dev Team</span>
             </div>
         </div>
@@ -399,14 +394,9 @@
             const userData = session ? JSON.parse(session) : null;
             if (!userData) return;
 
-            // Display Info Pengguna di Header
-            const userName = userData.nama || userData.username || "User";
-            const userEl = document.getElementById("userDisplayName");
-            const badgeEl = document.getElementById("userRoleBadge");
-            if (userEl) userEl.innerText = userName;
-            if (badgeEl) badgeEl.innerText = userData.role || "Staff";
-
+            const userName = userData.nama || userData.username || "";
             const isSuperAdmin = userName.toLowerCase() === "dede hidayat";
+
             const menuKeys = ["eskalasi", "rkm", "perbaikan", "task", "sync", "item", "log", "acces"];
 
             menuKeys.forEach(key => {
@@ -449,20 +439,12 @@
 
         function updateConnectionStatus(isConnected) {
             const container = document.getElementById("dbStatusIndicator");
-            const dot = document.getElementById("dbStatusDot");
-            const statusText = document.getElementById("dbStatusText");
-            const ping = container.querySelector(".animate-ping");
-
             if (isConnected) {
-                container.title = "Supabase Terkoneksi";
-                dot.className = "relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500";
-                if (statusText) statusText.innerText = "Online";
-                if (ping) ping.remove();
+                container.innerText = "Status: Connected to Supabase";
+                container.className = "text-emerald-400 font-medium";
             } else {
-                container.title = "Gagal Terkoneksi ke Supabase";
-                dot.className = "relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500";
-                if (statusText) statusText.innerText = "Offline";
-                if (ping) ping.className = "animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75";
+                container.innerText = "Status: Disconnected";
+                container.className = "text-rose-400 font-medium";
             }
         }
 
@@ -489,6 +471,9 @@
 
         async function loadData() {
             try {
+                document.getElementById("loading").style.display = "block";
+                document.getElementById("eskalasiTable").style.display = "none";
+
                 const { data, error } = await supabaseClient
                     .from('eskalasi')
                     .select('no, kode, subject, bulan, nilai')
@@ -515,7 +500,7 @@
             } catch (e) {
                 console.error(e);
                 updateConnectionStatus(false);
-                document.getElementById("loading").innerHTML = "<p class='text-red-500 dark:text-red-400 font-medium'>Gagal memproses data Supabase. Periksa kredensial / koneksi.</p>";
+                document.getElementById("loading").innerHTML = "<p class='text-red-400 font-medium'>Gagal memproses data Supabase. Periksa kredensial / koneksi.</p>";
             }
         }
 
@@ -524,12 +509,12 @@
             tbody.innerHTML = "";
             data.forEach((row, index) => {
                 tbody.innerHTML += `
-                    <tr class="hover:bg-slate-50/80 dark:hover:bg-slate-800/60 transition duration-150 odd:bg-white dark:odd:bg-slate-900 even:bg-slate-50/40 dark:even:bg-slate-800/30">
-                        <td class="px-6 py-4 text-center whitespace-nowrap text-slate-400 dark:text-slate-500 font-medium">${index + 1}</td>
-                        <td class="px-6 py-4 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">${row[1]}</td>
-                        <td class="px-6 py-4 text-slate-700 dark:text-slate-300">${row[2]}</td>
-                        <td class="px-6 py-4 text-slate-600 dark:text-slate-400 whitespace-nowrap">${row[3]}</td>
-                        <td class="px-6 py-4 text-slate-900 dark:text-slate-100 font-medium whitespace-nowrap">${row[4]}</td>
+                    <tr class="hover:bg-slate-800/40 transition duration-150 odd:bg-[#1a1d21] even:bg-[#15171a]">
+                        <td class="px-6 py-4 text-center whitespace-nowrap text-slate-500 font-medium">${index + 1}</td>
+                        <td class="px-6 py-4 font-semibold text-slate-100 whitespace-nowrap">${row[1]}</td>
+                        <td class="px-6 py-4 text-slate-300">${row[2]}</td>
+                        <td class="px-6 py-4 text-slate-400 whitespace-nowrap">${row[3]}</td>
+                        <td class="px-6 py-4 text-slate-100 font-medium whitespace-nowrap">${row[4]}</td>
                     </tr>
                 `;
             });
