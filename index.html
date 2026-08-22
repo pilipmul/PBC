@@ -27,7 +27,6 @@
   <title>Access Control - SOT Portal</title>
 
   <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
-  
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -51,6 +50,9 @@
   </style>
 </head>
 <body class="bg-[#f8f9fa] dark:bg-[#202124] text-[#202124] dark:text-[#e8eaed] min-h-screen font-sans p-3 sm:p-6 flex flex-col justify-between transition-colors duration-200">
+
+  <!-- Tempat Komponen Navigasi (navigasi.html) Disisipkan -->
+  <div id="navbar-placeholder" class="max-w-7xl mx-auto w-full mb-4"></div>
 
   <div id="toast" class="fixed top-5 right-5 z-[100] transform translate-y-[-20px] opacity-0 pointer-events-none transition-all duration-300 flex items-center gap-3 px-4 py-3 rounded-2xl shadow-xl border text-xs max-w-md">
     <div id="toast-icon" class="p-1.5 rounded-xl text-white shrink-0"></div>
@@ -127,6 +129,57 @@
     <span>Powered by Supabase & Tailwind CSS v4</span>
   </footer>
 
+  <!-- SCRIPT PEMUAT KOMPONEN NAVIGASI -->
+  <script>
+    fetch('navigasi.html')
+      .then(res => res.text())
+      .then(html => {
+        document.getElementById('navbar-placeholder').innerHTML = html;
+        initNavAccess();
+      })
+      .catch(err => console.error('Gagal memuat navigasi:', err));
+
+    function toggleMenuDropdown(e) {
+      e.stopPropagation();
+      const menu = document.getElementById("moduleDropdownMenu");
+      if (!menu) return;
+      menu.classList.toggle("hidden");
+      menu.classList.toggle("opacity-0");
+      menu.classList.toggle("scale-95");
+    }
+
+    function initNavAccess() {
+      const stored = localStorage.getItem("user");
+      if (!stored) return;
+      try {
+        const parsed = JSON.parse(stored);
+        const user = parsed.data || parsed;
+        const isAdmin = (user.nama || "").trim().toLowerCase() === "dede hidayat";
+        const check = (v) => isAdmin || ["Y", "TRUE", "1"].includes(String(v || "").trim().toUpperCase());
+
+        const mapping = [
+          { id: "nav-eskalasi", file: "eskalasi.html", allow: check(user.eskalasi) },
+          { id: "nav-rkm", file: "RKM.html", allow: check(user.rkm) },
+          { id: "nav-dokPerbaikan", file: "sr.html", allow: check(user.perbaikan) },
+          { id: "nav-tasks", file: "tasks.html", allow: check(user.task) },
+          { id: "nav-syncflow", file: "syncflow.html", allow: check(user.sync) },
+          { id: "nav-inventory", file: "inventory.html", allow: check(user.item) },
+          { id: "nav-logistics", file: "logistics.html", allow: check(user.inventory || user.log) },
+          { id: "nav-accesControl", file: "access.html", allow: check(user.acces) }
+        ];
+
+        mapping.forEach(item => {
+          const el = document.getElementById(item.id);
+          if (el && item.allow) {
+            el.classList.remove("hidden");
+            el.href = `${item.file}?user=${encodeURIComponent(user.nama)}`;
+          }
+        });
+      } catch(err) { console.error(err); }
+    }
+  </script>
+
+  <!-- SCRIPT UTAMA HALAMAN ACCESS CONTROL -->
   <script>
     const SUPABASE_URL = "https://sfblelnbczlvykqemhtm.supabase.co";
     const SUPABASE_ANON_KEY = "sb_publishable_9k7sUNqlqhRqjkUtSNpFPQ_VAspSZT0"; 
@@ -160,7 +213,6 @@
           .order('nama', { ascending: true });
         if (error) throw error;
 
-        // Menyaring akun Dede Hidayat agar tidak tampil di tabel
         allUsers = (data || []).filter(u => 
           (u.nama || "").trim().toLowerCase() !== "dede hidayat"
         );
@@ -252,7 +304,6 @@
         const { error } = await query;
         if (error) throw error;
 
-        // Perbarui data di memori lokal
         const targetUser = allUsers.find(u => (nik && u.nik && u.nik.trim() === nik) || (nama && u.nama && u.nama.trim() === nama));
         if (targetUser) {
           targetUser[fieldName] = updatedValue;
