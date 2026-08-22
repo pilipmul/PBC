@@ -48,7 +48,6 @@
     /* =========================================================
        MENGHILANGKAN SCROLLBAR/SLIDE-BAR VERTIKAL & HORISONTAL
        ========================================================= */
-    /* Sembunyikan scrollbar di seluruh halaman/body */
     html, body {
       scrollbar-width: none; /* Firefox */
       -ms-overflow-style: none; /* IE dan Edge */
@@ -325,7 +324,6 @@
           <p class="text-muted mb-0">Active User: <span id="txtCurrentUser" class="fw-bold text-primary">-</span></p>
         </div>
       </div>
-      <!-- Tombol + New akan dikontrol visibilitasnya via JS -->
       <button id="btnTambah" class="btn btn-success" onclick="openModal()">
         + New
       </button>
@@ -520,13 +518,13 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
-  // 1. INI KREDENSIAL SUPABASE
+  // 1. KREDENSIAL SUPABASE
   const SUPABASE_URL = "https://sfblelnbczlvykqemhtm.supabase.co";
   const SUPABASE_ANON_KEY = "sb_publishable_9k7sUNqlqhRqjkUtSNpFPQ_VAspSZT0";
   const { createClient } = supabase;
   const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-  const TABLE_NAME = "rkm"; // Nama tabel di Supabase
+  const TABLE_NAME = "rkm";
   
   const VALID_PICS = ["GA", "Head Ops.", "ME", "TRO", "FA", "Head FA", "Security", "All", "CS", "Kasir", "MKT"];
   let selectedPicsArray = [];
@@ -560,7 +558,6 @@
   document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("txtCurrentUser").innerText = CURRENT_USER;
 
-    // SEMBUNYIKAN TOMBOL + NEW JIKA USER BUKAN EDITOR
     const btnTambah = document.getElementById("btnTambah");
     if (!isEditor && btnTambah) {
       btnTambah.style.display = "none";
@@ -569,7 +566,6 @@
     bootstrapModal = new bootstrap.Modal(document.getElementById('rkmModal'));
     fetchRKMData();
 
-    // Sembunyikan popup filter jika mengklik area luar
     document.addEventListener("click", (e) => {
       const dropdown = document.getElementById("filterDropdown");
       if (!dropdown.contains(e.target) && !e.target.classList.contains("btn-filter-header")) {
@@ -692,7 +688,6 @@
     processDataAndRender();
   }
 
-  /* LOGIKA MULTIPLE CHOICE FILTER STATUS */
   function applyStatusFilter() {
     const checkedValues = [];
     document.querySelectorAll(".chk-status-filter:checked").forEach(chk => {
@@ -719,7 +714,6 @@
   function processDataAndRender() {
     let result = [...rkmDataCache];
 
-    // 1. Jalankan Filter Pencarian Per Kolom
     Object.keys(filtersState).forEach(key => {
       const query = filtersState[key];
       
@@ -742,7 +736,6 @@
       }
     });
 
-    // 2. Jalankan Sorting Ascending / Descending
     if (sortState.col && sortState.dir) {
       const key = sortState.col;
       const isAsc = sortState.dir === 'asc';
@@ -770,6 +763,7 @@
     data.forEach((item) => {
       const originalIndex = rkmDataCache.findIndex(d => d.id === item.id);
       const tr = document.createElement("tr");
+      tr.setAttribute("data-id", item.id); // PENANDA ID BARIS UNTUK UPDATE LOKAL
 
       const status = item.Status || item.status || "Open";
       const tanggal = item.Tanggal || item.tanggal || "-";
@@ -792,7 +786,6 @@
         ? picText.split(",").map(p => `<span class="badge bg-secondary me-1 mb-1">${p.trim()}</span>`).join("")
         : '-';
 
-      // PENYESUAIAN HAK EDIT PADA BADGE STATUS
       const clickAttr = isEditor ? `onclick="openModal(${originalIndex})"` : '';
       const cursorClass = isEditor ? 'btn-status-edit' : '';
       const titleAttr = isEditor ? 'Click to edit' : 'Read only';
@@ -814,8 +807,57 @@
     });
   }
 
+  /* UPDATE SPESIFIK HANYA ELEMEN BARIS DITERAPKAN KE DOM (TANPA RE-FETCH) */
+  function updateRowInDom(updatedItem) {
+    // 1. Perbarui data cache internal
+    const index = rkmDataCache.findIndex(d => d.id == updatedItem.id);
+    if (index !== -1) {
+      rkmDataCache[index] = updatedItem;
+    }
+
+    // 2. Ambil elemen baris dari DOM berdasarkan data-id
+    const tr = document.querySelector(`tr[data-id="${updatedItem.id}"]`);
+    if (!tr) return;
+
+    const status = updatedItem.Status || updatedItem.status || "Open";
+    const tanggal = updatedItem.Tanggal || updatedItem.tanggal || "-";
+    const sumber = updatedItem.Sumber || updatedItem.sumber || "-";
+    const caseText = updatedItem.Case || updatedItem.case || "-";
+    const picText = updatedItem.PIC || updatedItem.pic || "";
+    const updateText = updatedItem.Update || updatedItem.update || "-";
+    const targetText = updatedItem.Target || updatedItem.target || "-";
+
+    tr.className = "";
+    if (status === "Done") tr.classList.add("row-done");
+    else if (status === "Close") tr.classList.add("row-close");
+
+    let statusBadgeClass = "bg-primary";
+    if (status === "Done" || status === "Close") statusBadgeClass = "bg-dark text-white";
+
+    const picBadges = picText 
+      ? picText.split(",").map(p => `<span class="badge bg-secondary me-1 mb-1">${p.trim()}</span>`).join("")
+      : '-';
+
+    const clickAttr = isEditor ? `onclick="openModal(${index})"` : '';
+    const cursorClass = isEditor ? 'btn-status-edit' : '';
+    const titleAttr = isEditor ? 'Click to edit' : 'Read only';
+
+    tr.innerHTML = `
+      <td><b>${tanggal}</b></td>
+      <td>${sumber}</td>
+      <td>${caseText}</td>
+      <td>${picBadges}</td>
+      <td>${updateText}</td>
+      <td>${targetText}</td>
+      <td class="text-center">
+        <span class="badge ${statusBadgeClass} ${cursorClass} shadow-sm" ${clickAttr} title="${titleAttr}">
+          ${status}
+        </span>
+      </td>
+    `;
+  }
+
   function openModal(index = null) {
-    // BLOKIR AKSES MODAL JIKA BUKAN EDITOR
     if (!isEditor) {
       alert("Akses Terbatas: Anda hanya memiliki hak akses membaca (Read-Only).");
       return;
@@ -859,7 +901,6 @@
 
   /* SIMPAN (CREATE / UPDATE) KE SUPABASE */
   async function submitForm() {
-    // BLOKIR JIKA BUKAN EDITOR
     if (!isEditor) {
       alert("Akses Ditolak: Anda tidak memiliki izin untuk menyimpan data.");
       return;
@@ -888,31 +929,39 @@
       Status: document.getElementById("inpStatus").value
     };
 
-    let result;
     if (id) {
-      // UPDATE DATA
-      result = await _supabase
+      // PROSES EDIT: HANYA MENGUBAH BARIS YANG BERHUBUNGAN TANPA RENDER ULANG TABEL
+      const { data, error } = await _supabase
         .from(TABLE_NAME)
         .update(payload)
-        .eq('id', id);
+        .eq('id', id)
+        .select();
+
+      if (error) {
+        alert("Gagal menyimpan ke Supabase: " + error.message);
+      } else {
+        bootstrapModal.hide();
+        if (data && data.length > 0) {
+          updateRowInDom(data[0]);
+        }
+      }
     } else {
-      // INSERT DATA BARU
-      result = await _supabase
+      // PROSES TAMBAH BARU: INSERT DAN MEMUAT ULANG TABEL
+      const { error } = await _supabase
         .from(TABLE_NAME)
         .insert([payload]);
-    }
 
-    if (result.error) {
-      alert("Gagal menyimpan ke Supabase: " + result.error.message);
-    } else {
-      bootstrapModal.hide();
-      fetchRKMData();
+      if (error) {
+        alert("Gagal menyimpan ke Supabase: " + error.message);
+      } else {
+        bootstrapModal.hide();
+        fetchRKMData();
+      }
     }
   }
 
   /* HAPUS DATA DARI SUPABASE */
   async function deleteFromModal() {
-    // BLOKIR JIKA BUKAN EDITOR
     if (!isEditor) {
       alert("Akses Ditolak: Anda tidak memiliki izin untuk menghapus data.");
       return;
