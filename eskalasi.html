@@ -137,11 +137,9 @@
             border-radius: 12px; 
             background-color: #f8fafc;
             margin-bottom: 14px;
-            /* Menyembunyikan scrollbar Firefox & Edge/IE */
             scrollbar-width: none; 
             -ms-overflow-style: none;  
         }
-        /* Menyembunyikan scrollbar Webkit (Chrome, Safari) */
         .checkbox-list::-webkit-scrollbar {
             display: none;
             width: 0;
@@ -216,7 +214,6 @@
                 background-color: #334155;
                 color: #ffffff;
             }
-            /* Warna Input & Teks di Mode Gelap */
             .filter-search-box { 
                 border-color: #334155; 
                 background-color: #1e293b; 
@@ -266,8 +263,23 @@
     <header class="bg-slate-900 dark:bg-slate-900 text-white shadow-md sticky top-0 z-50 border-b border-slate-800">
         <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
             <div class="flex items-center gap-3">
-                <div class="bg-blue-600 p-2 rounded-lg shadow-inner">
-                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                <!-- Gir diubah menjadi Tombol Navigasi Dropdown -->
+                <div class="relative">
+                    <button id="navDropdownBtn" onclick="toggleNavDropdown(event)" class="bg-blue-600 hover:bg-blue-500 p-2 rounded-lg shadow-inner transition cursor-pointer flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-blue-400">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                    </button>
+                    <!-- Menu Dropdown Navigasi Dinamis -->
+                    <div id="navDropdownMenu" class="hidden absolute left-0 mt-2 w-56 bg-slate-800 border border-slate-700 rounded-xl shadow-xl py-2 z-50 text-sm">
+                        <a href="dashboard.html" class="block px-4 py-2 hover:bg-slate-700 text-slate-200">Dashboard</a>
+                        <a href="eskalasi.html" id="nav-eskalasi" class="hidden block px-4 py-2 hover:bg-slate-700 text-slate-200">Eskalasi</a>
+                        <a href="rkm.html" id="nav-rkm" class="hidden block px-4 py-2 hover:bg-slate-700 text-slate-200">RKM</a>
+                        <a href="perbaikan.html" id="nav-perbaikan" class="hidden block px-4 py-2 hover:bg-slate-700 text-slate-200">Perbaikan</a>
+                        <a href="task.html" id="nav-task" class="hidden block px-4 py-2 hover:bg-slate-700 text-slate-200">Task List</a>
+                        <a href="sync.html" id="nav-sync" class="hidden block px-4 py-2 hover:bg-slate-700 text-slate-200">Sync Flow</a>
+                        <a href="item.html" id="nav-item" class="hidden block px-4 py-2 hover:bg-slate-700 text-slate-200">Item Master</a>
+                        <a href="log.html" id="nav-log" class="hidden block px-4 py-2 hover:bg-slate-700 text-slate-200">System Log</a>
+                        <a href="acces.html" id="nav-acces" class="hidden block px-4 py-2 hover:bg-slate-700 text-slate-200">Akses Pengguna</a>
+                    </div>
                 </div>
                 <div>
                     <h1 class="text-xl font-bold tracking-wide">SOT (Sistem Operasional Terintegrasi)</h1>
@@ -284,21 +296,17 @@
     </header>
 
     <main class="max-w-7xl mx-auto px-4 py-8">
-        <div class="bg-white dark:bg-slate-900 p-4 rounded-xl shadow-xs border border-slate-200 dark:border-slate-800 mb-6 flex justify-between items-center gap-4 transition-colors">
-            <a href="dashboard.html" class="inline-flex items-center gap-2 text-sm font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
-                Kembali ke Dashboard
-            </a>
-            <a href="eskin.html" class="bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500 text-white text-xs px-4 py-2.5 rounded-lg font-medium shadow-xs transition flex items-center gap-1.5 cursor-pointer">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                Eskalasi Baru
-            </a>
-        </div>
-
         <div class="bg-white dark:bg-slate-900 rounded-xl shadow-xs border border-slate-200 dark:border-slate-800 overflow-hidden transition-colors">
-            <div class="p-5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
-                <h3 class="text-base font-bold text-slate-900 dark:text-slate-100 tracking-tight">Database Data Eskalasi</h3>
-                <p class="text-xs text-slate-500 dark:text-slate-400">Data diambil langsung dari tabel Supabase `eskalasi`</p>
+            <!-- Header Tabel dengan judul di kiri dan tombol Eskalasi Baru di ujung kanan -->
+            <div class="p-5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 flex justify-between items-center gap-4">
+                <div>
+                    <h3 class="text-base font-bold text-slate-900 dark:text-slate-100 tracking-tight">Database Data Eskalasi</h3>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Data diambil langsung dari tabel Supabase `eskalasi`</p>
+                </div>
+                <a href="eskin.html" class="bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500 text-white text-xs px-4 py-2.5 rounded-lg font-medium shadow-xs transition flex items-center gap-1.5 cursor-pointer whitespace-nowrap">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                    Eskalasi Baru
+                </a>
             </div>
 
             <div id="tableWrapper" class="overflow-x-auto" style="position: relative;">
@@ -373,6 +381,45 @@
     </main>
 
     <script>
+        // LOGIKA NAVIGASI AKUN & HAK AKSES
+        function initNavAccess() {
+            const session = localStorage.getItem("user");
+            const userData = session ? JSON.parse(session) : null;
+            if (!userData) return;
+
+            const userName = userData.nama || userData.username || "";
+            const isSuperAdmin = userName.toLowerCase() === "dede hidayat";
+
+            const menuKeys = ["eskalasi", "rkm", "perbaikan", "task", "sync", "item", "log", "acces"];
+
+            menuKeys.forEach(key => {
+                const navEl = document.getElementById(`nav-${key}`);
+                if (!navEl) return;
+
+                let hasAccess = false;
+                if (isSuperAdmin) {
+                    hasAccess = true;
+                } else if (userData.akses && userData.akses[key]) {
+                    const val = String(userData.akses[key]).toUpperCase();
+                    hasAccess = (val === "Y" || val === "TRUE" || val === "1");
+                }
+
+                if (hasAccess) {
+                    navEl.classList.remove("hidden");
+                    const currentHref = navEl.getAttribute("href").split("?")[0];
+                    navEl.setAttribute("href", `${currentHref}?user=${encodeURIComponent(userName)}`);
+                } else {
+                    navEl.classList.add("hidden");
+                }
+            });
+        }
+
+        function toggleNavDropdown(e) {
+            e.stopPropagation();
+            const dropdown = document.getElementById("navDropdownMenu");
+            dropdown.classList.toggle("hidden");
+        }
+
         // KREDENSIAL SUPABASE
         const SUPABASE_URL = "https://sfblelnbczlvykqemhtm.supabase.co";
         const SUPABASE_KEY = "sb_publishable_9k7sUNqlqhRqjkUtSNpFPQ_VAspSZT0";
@@ -481,11 +528,10 @@
             menu.style.display = 'block';
             menu.style.top = (btnRect.bottom - wrapperRect.top + tableWrapper.scrollTop + 6) + 'px';
             
-            // Perhitungan posisi X agar tidak melebihi batas kanan container
             let leftPos = btnRect.left - wrapperRect.left + tableWrapper.scrollLeft - 100;
             if (leftPos < 10) leftPos = 10;
             
-            const menuWidth = 260; // Lebar menu filter
+            const menuWidth = 260;
             const maxLeft = tableWrapper.clientWidth - menuWidth - 15;
             if (leftPos > maxLeft) {
                 leftPos = maxLeft;
@@ -591,10 +637,16 @@
             closeFilterMenu();
         }
 
-        document.onclick = () => closeFilterMenu();
+        document.onclick = () => {
+            closeFilterMenu();
+            document.getElementById("navDropdownMenu").classList.add("hidden");
+        };
         menu.onclick = (e) => e.stopPropagation();
 
-        window.onload = loadData;
+        window.onload = () => {
+            initNavAccess();
+            loadData();
+        };
     </script>
 </body>
 </html>
