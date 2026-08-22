@@ -1,610 +1,306 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <title>PBC SyncFlow</title> 
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" type="image/png" href="https://raw.githubusercontent.com/pilipmul/PBC-cek-Piutang/main/Logo%201.png">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Montserrat:wght@700&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <!-- Import Supabase JS Client -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <style>
-        * { box-sizing: border-box; font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
-        
-        body { 
-            margin: 0; padding: 0;
-            background: #0f172a;
-            display: flex; justify-content: center; align-items: flex-start; 
-            min-height: 100vh; padding-top: 20px;
-            color: #f1f5f9;
+  <script>
+    // Verifikasi Sesi sebelum halaman dimuat
+    (function() {
+      try {
+        const session = localStorage.getItem("user");
+        if (!session) { 
+          window.location.replace("https://sotpbc.vercel.app/login.html"); 
+          return; 
         }
-        
-        .container { 
-            width: 92%; max-width: 440px; 
-            background: rgba(30, 41, 59, 0.8);
-            backdrop-filter: blur(12px);
-            padding: 20px 22px 28px 22px; 
-            border-radius: 16px; 
-            border: 1px solid rgba(51, 65, 85, 0.6);
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.3);
-            position: relative; text-align: center;
-            margin-bottom: 20px; 
+        const userData = JSON.parse(session);
+        if (!userData) { 
+          window.location.replace("https://sotpbc.vercel.app/login.html"); 
+          return; 
         }
-        
-        #titleBtn { width: 100%; max-width: 280px; transition: opacity 0.2s; user-select: none; -webkit-user-drag: none; }
-        #nameWrapper { position: relative; padding-top: 2px; border-top: 1px solid #334155; padding-bottom: 2px; border-bottom: 1px solid #334155; }
-        
-        input, textarea { 
-            width: 100%; padding: 5px 10px; border: none; font-size: 1rem;
-            background-color: transparent; text-align: center; height: 34px; 
-            line-height: 1.2; display: block; resize: none; color: #ffffff;
-        }
-        input::placeholder, textarea::placeholder { color: #64748b; }
-        input:focus, textarea:focus { outline: none; }
-        input.item { overflow: hidden; text-overflow: clip; white-space: nowrap; }
-        input.item:not(:placeholder-shown):not(:focus) { animation: marquee 10s linear infinite; }
-        @keyframes marquee { 0% { text-indent: 100%; } 100% { text-indent: -100%; } }
-        
-        .clear-btn { 
-            position: absolute; right: 5px; top: 50%; transform: translateY(-50%);
-            background: #334155; color: #94a3b8; border-radius: 50%; width: 20px; height: 20px; 
-            display: none; align-items: center; justify-content: center; font-size: 14px; cursor: pointer;
-            z-index: 10; font-weight: bold; 
-        }
-        #nameWrapper:focus-within input:not(:placeholder-shown) ~ .clear-btn, .item-row div:first-child:focus-within input:not(:placeholder-shown) ~ .clear-btn { display: flex; }
-        
-        .row-3col { display: grid; grid-template-columns: 40% 20% 40%; gap: 0; align-items: center; margin-bottom: 5px; border-bottom: 1px solid #334155; padding-bottom: 5px; padding-top: 5px; position: relative; }
-        
-        .qty-wrapper { position: relative; display: grid; place-items: center; border-left: 1px solid #334155; border-right: 1px solid #334155; height: 34px; }
-        .stock-overlay { grid-area: 1/1; font-size: 1.1rem; font-weight: 700; color: rgba(239, 68, 68, 0.8); pointer-events: none; display: none; z-index: 1; }
-        input.qty { grid-area: 1/1; position: relative; z-index: 2; background: transparent !important; padding: 5px 0; -moz-appearance: textfield; }
-        input.qty::-webkit-outer-spin-button, input.qty::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-        input.qty.hide-placeholder::placeholder { color: transparent; }
-        textarea.desc { overflow-y: hidden; padding-top: 6px; padding-right: 25px; }
-        
-        .btn-group { display: flex; gap: 8px; margin-top: 10px; justify-content: center; position: relative; align-items: center; }
-        
-        /* FIX: Tombol Tambah Baris (+) */
-        .add-row { 
-            background-color: transparent !important; 
-            border: none; 
-            width: auto; 
-            padding: 8px; 
-            flex: none; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            box-shadow: none !important; 
-            outline: none !important;
-            transition: none !important;
-            -webkit-tap-highlight-color: transparent !important;
-        }
-        
-        button { 
-            flex: 1; padding: 8px 14px; background-color: #2563eb; color: #fff; border: none; 
-            border-radius: 8px; font-weight: 600; font-size: 1rem; cursor: pointer; 
-            transition: all 0.2s; box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);
-        }
-        button:hover:not(:disabled) { background-color: #1d4ed8; }
-        button:active:not(:disabled) { transform: scale(0.98); }
-        button:disabled { background-color: #475569; color: #94a3b8; cursor: not-allowed; box-shadow: none; }
-        #btnIn { opacity: 0.25; pointer-events: none; background-color: #2563eb; }
-        
-        .autocomplete-list { 
-            position: absolute; background: #1e293b; border: 1px solid #475569; border-radius: 8px;
-            z-index: 2000; max-height: 180px; overflow-y: auto; width: 100%; 
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5); text-align: left; display: none; top: 34px; left: 0; 
-        }
-        .autocomplete-item { padding: 10px; cursor: pointer; border-bottom: 1px solid #334155; color: #cbd5e1; }
-        .autocomplete-item:hover { background: #2563eb; color: #fff; }
-        
-        /* FIX: Tombol Hapus Baris (x) */
-        .delete-row { 
-            position: absolute; 
-            top: -10px; 
-            right: -2px; 
-            background: transparent !important; 
-            border: none; 
-            color: #ef4444; 
-            font-weight: bold; 
-            cursor: pointer; 
-            font-size: 1.1rem; 
-            padding: 5px; 
-            opacity: 0.7; 
-            box-shadow: none !important; 
-            outline: none !important;
-            transition: none !important;
-            -webkit-tap-highlight-color: transparent !important;
-        }
+        window.currentUser = userData.data || userData;
+      } catch (err) {
+        window.location.replace("https://sotpbc.vercel.app/login.html");
+      }
+    })();
+  </script>
 
-        /* FIX: Hilangkan efek hover/focus/active menyala pada tombol add-row dan delete-row */
-        .add-row:hover, .add-row:focus, .add-row:active,
-        .delete-row:hover, .delete-row:focus, .delete-row:active {
-            background-color: transparent !important;
-            box-shadow: none !important;
-            outline: none !important;
-        }
-        .delete-row:hover, .delete-row:focus, .delete-row:active {
-            opacity: 1;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Access Control - SOT Portal</title>
 
-        #itemContainer .item-row:first-child .delete-row { display: none; }
-        
-        .popup-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(4px); display: none; justify-content: center; align-items: center; z-index: 6000; }
-        .popup-box { background: #1e293b; border-radius: 16px; padding: 24px; width: 90%; max-width: 320px; text-align: center; border: 1px solid #475569; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); }
-        .modal-btn { width: fit-content; min-width: 100px; margin: 0 auto; display: block; padding: 8px 20px; }
-        
-        #successMode { background: #eab308; font-weight: 700; padding: 4px 16px; border-radius: 20px; margin-bottom: 15px; display: inline-block; color: #0f172a; }
-        .popup-toast { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(15, 23, 42, 0.95); border: 1px solid #334155; color: #fff; padding: 12px 24px; border-radius: 12px; display: none; z-index: 7000; width: fit-content; max-width: 85%; white-space: nowrap; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5); pointer-events: none; font-weight: 600; }
-        
-        .header-actions { position: absolute; top: 0; left: 0; right: 0; height: 40px; pointer-events: none; z-index: 10; display: flex; align-items: center; }
-        #backBtn, #refreshBtn, #hamburgerBtn { position: absolute; top: 10px; pointer-events: auto; background:none; border:none; width:auto; padding:0; display:flex; align-items:center; text-decoration: none; box-shadow: none; }
-        #backBtn { left: 12px; }
-        #refreshBtn { left: 45px; }
-        #hamburgerBtn { right: 10px; }
-        #gaIndicator { position: absolute; top: 10px; left: 78px; color: #3b82f6; font-weight: 800; font-size: 14px; display: none; pointer-events: none; }
-        
-        .dropdown-menu { position: absolute; top: 35px; right: 10px; background: #1e293b; border: 1px solid #475569; border-radius: 8px; display: none; flex-direction: column; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3); pointer-events: auto; min-width: 110px; }
-        .dropdown-item { padding: 10px 15px; font-size: 0.9rem; cursor: pointer; color: #3b82f6; font-weight: 600; text-align: left; border-bottom: 1px solid #334155; }
-        .dropdown-item:hover { background: #334155; }
-        
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .spinning { animation: spin 1s linear infinite; }
-        
-        #historyPopup { position: absolute; top: 35px; right: 10px; background-color: #1e293b; border: 1px solid #475569; border-radius: 8px; width: 280px; max-height: 350px; overflow-y: auto; padding: 0; display: none; text-align: left; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5); z-index: 5000; }
-        .history-header { position: sticky; top: 0; background: #1e293b; padding: 8px 12px; z-index: 10; border-bottom: 1px solid #334155; display: flex; align-items: center; justify-content: center; min-height: 45px; }
-        #historySearchInput { display: none; width: 85%; height: 30px; border: 1px solid #475569; border-radius: 6px; padding: 0 10px; font-size: 0.85rem; text-align: left; background: #0f172a; color: #fff; margin-right: 35px; }
-        #searchToggleBtn { position: absolute; right: 10px; cursor: pointer; display: flex; align-items: center; }
-        
-        #historyList { padding: 4px 12px 12px 12px; }
-        #loaderOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); display: none; justify-content: center; align-items: center; z-index: 9999; }
-        .loader { border: 6px solid #334155; border-top: 6px solid #2563eb; border-radius: 50%; width: 50px; height: 50px; animation: spin 0.8s linear infinite; }
-        
-        .history-item { padding: 8px; border-bottom: 1px solid #334155; cursor: pointer; transition: background 0.2s; }
-        .history-item:hover { background: #334155; }
-        .history-detail { display: none; padding: 8px; background: #0f172a; font-size: 0.8rem; color: #cbd5e1; border-radius: 6px; margin-top: 5px; text-align: left; line-height: 1.4; border: 1px solid #334155; }
-        
-        #adminPass, #descPopupInput { background: #0f172a; color: #fff; border: 1px solid #475569 !important; text-align: left; }
-        #adminPass:focus, #descPopupInput:focus { border-color: #2563eb !important; }
-    </style>
+  <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+  
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <style>
+    body { 
+      font-family: 'Roboto', sans-serif; 
+      overflow-x: hidden;
+    }
+    .custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+    .custom-scroll::-webkit-scrollbar-thumb { background: #dadce0; border-radius: 8px; }
+    .custom-scroll::-webkit-scrollbar-thumb:hover { background: #bdc1c6; }
+    .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+
+    @media (prefers-color-scheme: dark) {
+      .custom-scroll::-webkit-scrollbar-thumb { background: #5f6368; }
+      .custom-scroll::-webkit-scrollbar-thumb:hover { background: #7c7e81; }
+    }
+  </style>
 </head>
-<body>
-<div id="loaderOverlay"><div class="loader"></div></div>
-<div class="container">
-    <div id="popupToast" class="popup-toast"></div>
-    <div class="header-actions">
-        <a href="https://pilipmul.github.io/SOT/dashboard.html" id="backBtn" title="Kembali ke Dashboard">
-            <svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#38bdf8"><path d="m313-440 224 224-57 56-320-320 320-320 57 56-224 224h487v80H313Z"/></svg>
+<body class="bg-[#f8f9fa] dark:bg-[#202124] text-[#202124] dark:text-[#e8eaed] min-h-screen font-sans p-3 sm:p-6 flex flex-col justify-between transition-colors duration-200">
+
+  <div id="toast" class="fixed top-5 right-5 z-[100] transform translate-y-[-20px] opacity-0 pointer-events-none transition-all duration-300 flex items-center gap-3 px-4 py-3 rounded-2xl shadow-xl border text-xs max-w-md">
+    <div id="toast-icon" class="p-1.5 rounded-xl text-white shrink-0"></div>
+    <div>
+      <p id="toast-title" class="font-bold text-xs"></p>
+      <p id="toast-msg" class="text-xs opacity-90 break-words"></p>
+    </div>
+  </div>
+
+  <div class="max-w-7xl mx-auto space-y-4 w-full">
+
+    <header class="bg-white dark:bg-[#2d2e30] border border-[#dadce0] dark:border-[#3c4043] rounded-2xl p-4 sm:p-5 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 transition-colors">
+      <div class="flex items-center gap-3.5">
+        <a href="dashboard.html" class="inline-flex items-center justify-center w-10 h-10 bg-[#f1f3f4] dark:bg-[#3c4043] hover:bg-[#e8eaed] dark:hover:bg-[#4a4e51] text-[#5f6368] dark:text-[#bdc1c6] rounded-full transition-all" title="Kembali ke Dashboard">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
         </a>
-    
-        <button id="refreshBtn" onclick="fetchDataAndUpdateUI()">
-             <svg id="refreshIcon" xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#38bdf8"><path d="M480-160q-134 0-227-93t-93-227q0-134 93-227t227-93q69 0 132 28.5T720-690v-110h80v280H520v-80h168q-32-56-87.5-88T480-720q-100 0-170 70t-70 170q0 100 70 170t170 70q77 0 139-44t87-116h84q-28 106-114 173t-196 67Z"/></svg>
+        <div>
+          <h1 class="text-lg sm:text-xl font-bold text-[#202124] dark:text-[#e8eaed] leading-tight flex items-center gap-2">
+            <span>Access Control Management</span>
+          </h1>
+          <p class="text-xs text-[#5f6368] dark:text-[#9aa0a6]">Atur dan kelola hak akses modul pengguna aplikasi SOT</p>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-2.5 pt-3 sm:pt-0 border-t sm:border-t-0 border-[#f1f3f4] dark:border-[#3c4043]">
+        <button onclick="fetchUsers()" class="px-4 py-2 bg-[#1a73e8] hover:bg-[#1557b0] text-white rounded-full text-xs font-medium transition shadow-md hover:shadow-lg flex items-center gap-1.5 cursor-pointer">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+          <span>Refresh Data</span>
         </button>
-        <div id="gaIndicator">GA</div>
-        <button id="hamburgerBtn" onclick="toggleDropdown(event)">
-            <svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#38bdf8"><path d="M120-240v-80h720v80H120Zm0-200v-80h720v80H120Zm0-200v-80h720v80H120Z"/></svg>
-        </button>
-        
-        <div id="myDropdown" class="dropdown-menu">
-            <div class="dropdown-item" onclick="toggleGAMode()">GA Mode</div>
-            <div id="btnHistoryGA" class="dropdown-item" style="display:none;" onclick="toggleHistoryPopup(event)">~50 Trx</div>
-        </div>
+      </div>
+    </header>
+
+    <div class="bg-white dark:bg-[#2d2e30] border border-[#dadce0] dark:border-[#3c4043] rounded-2xl p-4 shadow-sm flex flex-col sm:flex-row justify-between items-center gap-4 transition-colors">
+      <div class="relative w-full sm:w-80">
+        <input type="text" id="searchInput" oninput="filterUsers()" placeholder="Cari Nama atau NIK..." class="w-full bg-[#f1f3f4] dark:bg-[#202124] focus:bg-white dark:focus:bg-[#3c4043] border border-transparent focus:border-[#1a73e8] rounded-full pl-9 pr-4 py-2 text-xs text-[#202124] dark:text-[#e8eaed] placeholder-[#5f6368] dark:placeholder-[#9aa0a6] focus:outline-none transition shadow-inner font-medium">
+        <svg class="w-4 h-4 text-[#5f6368] dark:text-[#9aa0a6] absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+      </div>
+      
+      <div class="text-xs text-[#5f6368] dark:text-[#9aa0a6] w-full sm:w-auto text-right font-medium">
+        Total Pengguna: <span id="userCount" class="font-bold text-[#1a73e8] dark:text-[#8ab4f8]">0</span>
+      </div>
     </div>
 
-    <div id="historyPopup">
-        <div class="history-header">
-            <h4 id="historyTitle" style="margin:0; color:#3b82f6;">~50 Trx</h4>
-            <input type="text" id="historySearchInput" placeholder="Cari transaksi..." oninput="filterHistory()">
-            <div id="searchToggleBtn" onclick="toggleHistorySearch(event)">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20px" height="20px" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-            </div>
-        </div>
-        <div id="historyList"></div>
+    <div class="bg-white dark:bg-[#2d2e30] border border-[#dadce0] dark:border-[#3c4043] rounded-2xl shadow-sm overflow-hidden transition-colors">
+      <div class="overflow-x-auto custom-scroll">
+        <table class="w-full text-left text-xs text-[#202124] dark:text-[#e8eaed]">
+          <thead class="bg-[#f8f9fa] dark:bg-[#202124] text-[#5f6368] dark:text-[#bdc1c6] uppercase tracking-wider font-semibold border-b border-[#dadce0] dark:border-[#3c4043]">
+            <tr>
+              <th scope="col" class="px-4 py-3.5">No</th>
+              <th scope="col" class="px-4 py-3.5">Nama / NIK</th>
+              <th scope="col" class="px-3 py-3.5 text-center">Eskalasi</th>
+              <th scope="col" class="px-3 py-3.5 text-center">RKM</th>
+              <th scope="col" class="px-3 py-3.5 text-center">Dok. Perbaikan</th>
+              <th scope="col" class="px-3 py-3.5 text-center">Tasks</th>
+              <th scope="col" class="px-3 py-3.5 text-center">Syncflow</th>
+              <th scope="col" class="px-3 py-3.5 text-center">Item</th>
+              <th scope="col" class="px-3 py-3.5 text-center">Inventory</th>
+              <th scope="col" class="px-3 py-3.5 text-center">Access Control</th>
+            </tr>
+          </thead>
+          <tbody id="userTableBody" class="divide-y divide-[#f1f3f4] dark:divide-[#3c4043] font-medium">
+            <tr>
+              <td colspan="10" class="text-center py-8 text-[#5f6368] dark:text-[#9aa0a6]">Memuat data hak akses pengguna...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
 
-    <div style="display: flex; justify-content: center; align-items: center; margin: 24px 0 16px 0; width: 100%;">
-        <img id="titleBtn" src="https://raw.githubusercontent.com/pilipmul/PBC-cek-Piutang/c917d70c8d2a8f1630b8dd1400a2d13c2aa55d65/Title%20PBC%20B.png" alt="PBC SyncFlow" style="display: block; margin: 0 auto;">
-    </div>
-    <form id="myForm">
-        <div id="nameWrapper">
-            <input type="text" id="name" placeholder="Name" autocomplete="off" required readonly 
-                   style="background-color: #1e293b; color: #94a3b8; cursor: not-allowed;">
-            <div class="clear-btn" style="display: none !important;" onmousedown="clearInput(event, this)">×</div>
-            <div id="nameList" class="autocomplete-list"></div>
-        </div>
-        <div id="itemContainer">
-            <div class="row-3col item-row">
-                <div style="position: relative;">
-                    <input type="text" class="item" placeholder="Item" autocomplete="off" required>
-                    <div class="clear-btn" onmousedown="clearInput(event, this)">×</div>
-                    <div class="autocomplete-list"></div>
-                </div>
-                <div class="qty-wrapper">
-                    <span class="stock-overlay"></span>
-                    <input type="number" class="qty" min="1" placeholder="Qty" inputmode="numeric" pattern="[0-9]*" onkeydown="preventNonNumeric(event)" required>
-                </div>
-                <div style="position: relative;">
-                    <textarea class="desc" placeholder="Notes" onmousedown="startLongPress(event, this)" onmouseup="cancelLongPress()" onmouseleave="cancelLongPress()" ontouchstart="startLongPress(event, this)" ontouchend="cancelLongPress()"></textarea>
-                    <button type="button" class="delete-row">×</button>
-                </div>
-            </div>
-        </div>
-        <div class="btn-group">
-            <button type="button" class="in" id="btnIn">IN</button>
-            <button type="button" class="add-row" id="addRow">
-                <svg xmlns="http://www.w3.org/2000/svg" height="32px" viewBox="0 -960 960 960" width="32px" fill="#38bdf8"><path d="M440-440H200v-80h240v-240h80v240h240v80H520v240h-80v-240Z"/></svg>
-            </button>
-            <button type="button" class="out" id="btnOut">OUT</button>
-        </div>
-    </form>
-</div>
+  </div>
 
-<div id="confirmPopup" class="popup-overlay"><div class="popup-box"><h3 id="confirmTitle" style="color:#3b82f6; font-weight:700;"></h3><div id="confirmItems" style="text-align:left; margin-bottom:25px; color:#cbd5e1;"></div><div class="btn-group"><button class="modal-btn" id="finalSubmitBtn">POST</button><button class="modal-btn" onclick="closeConfirmPopup()" style="background:#475569;">CANCEL</button></div></div></div>
-<div id="successPopup" class="popup-overlay"><div class="popup-box"><div id="successMode"></div><div id="successItems" style="text-align:left; margin-bottom:20px; color:#cbd5e1;"></div><button class="modal-btn" onclick="closeSuccessPopup()">Close</button></div></div>
-<div id="descPopup" class="popup-overlay"><div class="popup-box"><textarea id="descPopupInput" style="width:100%; height:120px; border:1px solid #475569; border-radius:8px; margin-bottom:10px; text-align: left; padding:10px;"></textarea><button class="modal-btn" onclick="saveDescPopup()">Save</button></div></div>
-<div id="passPopup" class="popup-overlay"><div class="popup-box"><input type="password" id="adminPass" placeholder="Password" style="border:1px solid #475569; border-radius:8px; margin-bottom:15px; height:45px; padding: 0 10px;"><div class="btn-group"><button class="modal-btn" onclick="checkPassword()">OK</button><button class="modal-btn" onclick="closePassPopup()" style="background:#475569;">Batal</button></div></div></div>
+  <footer class="max-w-7xl mx-auto w-full mt-8 pt-4 border-t border-[#dadce0] dark:border-[#3c4043] text-xs text-[#5f6368] dark:text-[#9aa0a6] flex flex-col sm:flex-row justify-between items-center gap-2">
+    <span>Sistem Operasional Terintegrasi Portal - Access Control</span>
+    <span>Powered by Supabase & Tailwind CSS v4</span>
+  </footer>
 
-<script>
-    const SUPABASE_URL = 'https://sfblelnbczlvykqemhtm.supabase.co';
-    const SUPABASE_ANON_KEY = 'sb_publishable_9k7sUNqlqhRqjkUtSNpFPQ_VAspSZT0';
+  <script>
+    const SUPABASE_URL = "https://sfblelnbczlvykqemhtm.supabase.co";
+    const SUPABASE_ANON_KEY = "sb_publishable_9k7sUNqlqhRqjkUtSNpFPQ_VAspSZT0"; 
     
-    const supabaseClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
-
-    const userData = JSON.parse(localStorage.getItem("user"));
-    if (!userData) {
-        window.location.href = "login.html";
+    let supabaseClient = null;
+    if (window.supabase) {
+      supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     }
 
-    let nameData = [], itemData = [], itemStock = {}, lastTransactions = [], gaMode = false, activeTextarea = null, longPressTimer, passAction = "", currentMode = "", currentItems = [], currentName = "";
+    let allUsers = [];
 
-    function preventNonNumeric(e) {
-        if ([46, 8, 9, 27, 13].indexOf(e.keyCode) !== -1 ||
-            (e.keyCode === 65 && (e.ctrlKey === true || e.metaKey === true)) ||
-            (e.keyCode === 67 && (e.ctrlKey === true || e.metaKey === true)) ||
-            (e.keyCode === 86 && (e.ctrlKey === true || e.metaKey === true)) ||
-            (e.keyCode >= 35 && e.keyCode <= 39)) {
-            return;
-        }
-        if ((e.shiftKey || (e.keyCode < 48 || e.keyCode > 57)) && (e.keyCode < 96 || e.keyCode > 105)) {
-            e.preventDefault();
-        }
+    function isAccessTrue(val) {
+      if (!val) return false;
+      const str = String(val).trim().toUpperCase();
+      return str === "Y" || str === "TRUE" || str === "1";
     }
 
-    function clearInput(e, btn) { e.preventDefault(); const inp = btn.parentElement.querySelector('input'); inp.value = ''; const list = btn.parentElement.querySelector('.autocomplete-list'); if(list) list.style.display = 'none'; inp.focus(); refreshAllStockOverlays(); }
-    function startLongPress(e, el) { activeTextarea = el; longPressTimer = setTimeout(() => { document.getElementById("descPopupInput").value = el.value; document.getElementById("descPopup").style.display = "flex"; document.getElementById("descPopupInput").focus(); }, 600); }
-    function cancelLongPress() { clearTimeout(longPressTimer); }
-    function saveDescPopup() { if (activeTextarea) activeTextarea.value = document.getElementById("descPopupInput").value; document.getElementById("descPopup").style.display = "none"; }
-    function toggleDropdown(e) { e.stopPropagation(); const d = document.getElementById("myDropdown"); d.style.display = (d.style.display === "flex") ? "none" : "flex"; }
-    function toggleGAMode() { document.getElementById("myDropdown").style.display = "none"; if (!gaMode) { passAction = "ga"; document.getElementById("passPopup").style.display = "flex"; document.getElementById("adminPass").focus(); } else { updateGAUI(false); } }
-    
-    function updateGAUI(status) { 
-        gaMode = status; 
-        document.getElementById("gaIndicator").style.display = gaMode ? "block" : "none"; 
-        document.getElementById("btnHistoryGA").style.display = gaMode ? "block" : "none"; 
-        
-        const btnIn = document.getElementById("btnIn"); 
-        if (gaMode) { 
-            btnIn.style.opacity = "1"; 
-            btnIn.style.pointerEvents = "auto"; 
-        } else { 
-            btnIn.style.opacity = "0.25"; 
-            btnIn.style.pointerEvents = "none"; 
-        } 
-        
-        initAutocomplete();
-        refreshAllStockOverlays();
-    }
-    
-    function refreshAllStockOverlays() {
-        document.querySelectorAll(".item-row").forEach(row => {
-            const itemInput = row.querySelector(".item");
-            const qtyInput = row.querySelector(".qty");
-            const overlay = row.querySelector(".stock-overlay");
-            
-            if (!itemInput || !qtyInput || !overlay) return;
+    async function fetchUsers() {
+      const tbody = document.getElementById("userTableBody");
+      tbody.innerHTML = `<tr><td colspan="10" class="text-center py-8 text-[#5f6368] dark:text-[#9aa0a6]">Memuat data pengguna...</td></tr>`;
 
-            const val = itemInput.value.trim();
+      if (!supabaseClient) {
+        showToast("Error", "Koneksi Supabase tidak tersedia.", "error");
+        return;
+      }
 
-            if (gaMode && val && itemStock[val] !== undefined) {
-                overlay.textContent = itemStock[val];
-                overlay.style.display = qtyInput.value ? "none" : "block";
-                qtyInput.classList.add("hide-placeholder");
-            } else {
-                overlay.style.display = "none";
-                qtyInput.classList.remove("hide-placeholder");
-            }
-        });
+      try {
+        const { data, error } = await supabaseClient
+          .from('users')
+          .select('*')
+          .order('nama', { ascending: true });
+        if (error) throw error;
+
+        // Menyaring akun Dede Hidayat agar tidak tampil di tabel
+        allUsers = (data || []).filter(u => 
+          (u.nama || "").trim().toLowerCase() !== "dede hidayat"
+        );
+        document.getElementById("userCount").textContent = allUsers.length;
+        renderUsers(allUsers);
+      } catch (err) {
+        console.error("Fetch users error:", err);
+        tbody.innerHTML = `<tr><td colspan="10" class="text-center py-8 text-[#d93025] dark:text-[#f28b82]">Gagal memuat data pengguna dari Supabase.</td></tr>`;
+        showToast("Gagal Loading", err.message || "Gagal mengambil data dari server.", "error");
+      }
     }
 
-    async function fetchDataAndUpdateUI() { 
-        if (!supabaseClient) {
-            showToast("⚠️ Supabase Client gagal dimuat");
-            return;
-        }
+    function renderUsers(usersList) {
+      const tbody = document.getElementById("userTableBody");
+      tbody.innerHTML = "";
 
-        const icon = document.getElementById("refreshIcon");
-        if(icon) icon.classList.add("spinning"); 
+      if (usersList.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="10" class="text-center py-8 text-[#5f6368] dark:text-[#9aa0a6]">Tidak ada data pengguna ditemukan.</td></tr>`;
+        return;
+      }
 
-        try { 
-            const { data: dbUsers, error: errUsers } = await supabaseClient
-                .from('users')
-                .select('nama');
+      usersList.forEach((u, idx) => {
+        const tr = document.createElement("tr");
+        tr.className = "hover:bg-[#f8f9fa] dark:hover:bg-[#3c4043]/50 transition duration-150";
 
-            let userList = [];
-            if (!errUsers && dbUsers) {
-                userList = dbUsers.map(u => u.nama).filter(Boolean);
-            }
+        const eskalasiChecked = isAccessTrue(u.eskalasi) ? "checked" : "";
+        const rkmChecked = isAccessTrue(u.rkm) ? "checked" : "";
+        const perbaikanChecked = isAccessTrue(u.perbaikan) ? "checked" : "";
+        const taskChecked = isAccessTrue(u.task) ? "checked" : "";
+        const syncChecked = isAccessTrue(u.sync) ? "checked" : "";
+        const itemChecked = isAccessTrue(u.item) ? "checked" : "";
+        const inventoryChecked = isAccessTrue(u.log) ? "checked" : "";
+        const accesChecked = isAccessTrue(u.acces) ? "checked" : "";
 
-            const { data: dbItems, error: errItem } = await supabaseClient
-                .from('item')
-                .select('item, balance');
-            
-            if (errItem) throw errItem;
+        const userNik = (u.nik || "").trim();
+        const userNama = (u.nama || "").trim();
 
-            if (dbItems) {
-                itemData = [...new Set(dbItems.map(d => d.item).filter(Boolean))];
-                
-                itemStock = {};
-                dbItems.forEach(d => {
-                    if (d.item) {
-                        itemStock[d.item.trim()] = (d.balance !== null && d.balance !== undefined) ? d.balance : 0;
-                    }
-                });
-            }
-
-            const { data: trxData, error: errTrx } = await supabaseClient
-                .from('inventory')
-                .select('user, item, in, out, date, note')
-                .order('no', { ascending: false })
-                .limit(50);
-
-            if (!errTrx && trxData) {
-                const usersFromInv = trxData.map(t => t.user).filter(Boolean);
-                if (userData && userData.nama) usersFromInv.push(userData.nama);
-                
-                nameData = [...new Set([...userList, ...usersFromInv])];
-
-                lastTransactions = trxData.map(t => {
-                    const mode = (t.in && t.in > 0) ? 'in' : 'out';
-                    const qty = mode === 'in' ? t.in : (t.out || 0);
-                    return [
-                        t.user || '-',
-                        mode,
-                        t.item || '-',
-                        qty ? qty.toString() : '0',
-                        t.date || '-',
-                        t.note || '-'
-                    ];
-                });
-            } else {
-                nameData = [...new Set(userList)];
-            }
-
-            initAutocomplete(); 
-            refreshAllStockOverlays();
-        } catch (e) { 
-            console.error("Supabase fetch error:", e);
-            showToast("❌ Sync Error"); 
-        } finally { 
-            if(icon) icon.classList.remove("spinning"); 
-        } 
+        tr.innerHTML = `
+          <td class="px-4 py-3 text-[#5f6368] dark:text-[#bdc1c6] font-mono">${idx + 1}</td>
+          <td class="px-4 py-3">
+            <div class="font-bold text-[#202124] dark:text-[#e8eaed]">${userNama || '-'}</div>
+            <div class="text-[10px] font-mono text-[#5f6368] dark:text-[#9aa0a6]">NIK: ${userNik || '-'}</div>
+          </td>
+          <td class="px-3 py-3 text-center">
+            <input type="checkbox" onchange="autoSaveAccess('${encodeURIComponent(userNik)}', '${encodeURIComponent(userNama)}', 'eskalasi', this.checked)" ${eskalasiChecked} class="w-4 h-4 text-[#1a73e8] focus:ring-[#1a73e8] rounded cursor-pointer border-[#dadce0] dark:border-[#5f6368]">
+          </td>
+          <td class="px-3 py-3 text-center">
+            <input type="checkbox" onchange="autoSaveAccess('${encodeURIComponent(userNik)}', '${encodeURIComponent(userNama)}', 'rkm', this.checked)" ${rkmChecked} class="w-4 h-4 text-[#1a73e8] focus:ring-[#1a73e8] rounded cursor-pointer border-[#dadce0] dark:border-[#5f6368]">
+          </td>
+          <td class="px-3 py-3 text-center">
+            <input type="checkbox" onchange="autoSaveAccess('${encodeURIComponent(userNik)}', '${encodeURIComponent(userNama)}', 'perbaikan', this.checked)" ${perbaikanChecked} class="w-4 h-4 text-[#1a73e8] focus:ring-[#1a73e8] rounded cursor-pointer border-[#dadce0] dark:border-[#5f6368]">
+          </td>
+          <td class="px-3 py-3 text-center">
+            <input type="checkbox" onchange="autoSaveAccess('${encodeURIComponent(userNik)}', '${encodeURIComponent(userNama)}', 'task', this.checked)" ${taskChecked} class="w-4 h-4 text-[#1a73e8] focus:ring-[#1a73e8] rounded cursor-pointer border-[#dadce0] dark:border-[#5f6368]">
+          </td>
+          <td class="px-3 py-3 text-center">
+            <input type="checkbox" onchange="autoSaveAccess('${encodeURIComponent(userNik)}', '${encodeURIComponent(userNama)}', 'sync', this.checked)" ${syncChecked} class="w-4 h-4 text-[#1a73e8] focus:ring-[#1a73e8] rounded cursor-pointer border-[#dadce0] dark:border-[#5f6368]">
+          </td>
+          <td class="px-3 py-3 text-center">
+            <input type="checkbox" onchange="autoSaveAccess('${encodeURIComponent(userNik)}', '${encodeURIComponent(userNama)}', 'item', this.checked)" ${itemChecked} class="w-4 h-4 text-[#1a73e8] focus:ring-[#1a73e8] rounded cursor-pointer border-[#dadce0] dark:border-[#5f6368]">
+          </td>
+          <td class="px-3 py-3 text-center">
+            <input type="checkbox" onchange="autoSaveAccess('${encodeURIComponent(userNik)}', '${encodeURIComponent(userNama)}', 'log', this.checked)" ${inventoryChecked} class="w-4 h-4 text-[#1a73e8] focus:ring-[#1a73e8] rounded cursor-pointer border-[#dadce0] dark:border-[#5f6368]">
+          </td>
+          <td class="px-3 py-3 text-center">
+            <input type="checkbox" onchange="autoSaveAccess('${encodeURIComponent(userNik)}', '${encodeURIComponent(userNama)}', 'acces', this.checked)" ${accesChecked} class="w-4 h-4 text-[#1a73e8] focus:ring-[#1a73e8] rounded cursor-pointer border-[#dadce0] dark:border-[#5f6368]">
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
     }
 
-    function initAutocomplete() { 
-        setupAutocomplete(document.getElementById("name"), document.getElementById("nameList"), nameData); 
-        document.querySelectorAll(".item-row").forEach(row => { 
-            setupAutocomplete(row.querySelector(".item"), row.querySelector(".autocomplete-list"), itemData, true, row.querySelector(".stock-overlay"), row.querySelector(".qty")); 
-        }); 
-    }
+    async function autoSaveAccess(encodedNik, encodedNama, fieldName, isChecked) {
+      const nik = decodeURIComponent(encodedNik).trim();
+      const nama = decodeURIComponent(encodedNama).trim();
+      const updatedValue = isChecked ? "Y" : null;
 
-    function setupAutocomplete(input, box, data, isItem=false, overlay=null, qtyInput=null) { 
-        const updateOverlay = () => { 
-            const val = input.value.trim();
-            if (isItem && gaMode && val && itemStock[val] !== undefined) { 
-                overlay.textContent = itemStock[val]; 
-                overlay.style.display = qtyInput.value ? "none" : "block"; 
-                qtyInput.classList.add("hide-placeholder"); 
-            } else if (overlay) { 
-                overlay.style.display = "none"; 
-                if(qtyInput) qtyInput.classList.remove("hide-placeholder"); 
-            } 
-        }; 
-        input.oninput = () => { 
-            const val = input.value.trim().toLowerCase(); 
-            updateOverlay(); 
-            if (!val) { box.style.display = "none"; return; } 
-            
-            let sourceData = data;
-            if (isItem && !gaMode) {
-                sourceData = data.filter(d => (itemStock[d] || 0) > 0);
-            }
+      try {
+        let query = supabaseClient
+          .from('users')
+          .update({ [fieldName]: updatedValue });
 
-            const match = sourceData.filter(d => d && d.toLowerCase().includes(val)).slice(0, 10); 
-            box.innerHTML = match.map(m => `<div class="autocomplete-item">${m}</div>`).join(''); 
-            box.style.display = match.length ? "block" : "none"; 
-            box.querySelectorAll(".autocomplete-item").forEach(div => { 
-                div.onclick = () => { 
-                    input.value = div.textContent; 
-                    box.style.display = "none"; 
-                    updateOverlay(); 
-                }; 
-            }); 
-        }; 
-        if (qtyInput) qtyInput.oninput = updateOverlay; 
-    }
-    
-    async function handleSubmit(mode) { 
-        currentName = document.getElementById("name").value.trim(); 
-        if (!currentName) return showToast("⚠️ Pilih Nama!"); 
-        
-        currentItems = [...document.querySelectorAll(".item-row")].map(row => ({ 
-            item: row.querySelector(".item").value.trim(), 
-            qty: parseInt(row.querySelector(".qty").value), 
-            desc: row.querySelector(".desc").value.trim() 
-        })).filter(it => it.item && it.qty); 
-        
-        if (!currentItems.length) return showToast("⚠️ Isi Item!"); 
-
-        const invalidItem = currentItems.find(it => !itemData.includes(it.item));
-        if (invalidItem) {
-            return showToast("⚠️ Item tidak sesuai database!");
+        if (nik) {
+          query = query.ilike('nik', `%${nik}%`);
+        } else {
+          query = query.eq('nama', nama);
         }
 
-        if (mode === 'out') {
-            const overStockItem = currentItems.find(it => {
-                const stock = itemStock[it.item] || 0;
-                return it.qty > stock;
-            });
-            if (overStockItem) {
-                return showToast("⚠️ Understok");
-            }
+        const { error } = await query;
+        if (error) throw error;
+
+        // Perbarui data di memori lokal
+        const targetUser = allUsers.find(u => (nik && u.nik && u.nik.trim() === nik) || (nama && u.nama && u.nama.trim() === nama));
+        if (targetUser) {
+          targetUser[fieldName] = updatedValue;
         }
-        
-        currentMode = mode; 
-        document.getElementById("confirmTitle").innerText = mode.toUpperCase(); 
-        document.getElementById("confirmItems").innerHTML = currentItems.map(i => `- ${i.item}: <span style="color:#ef4444;">${i.qty}</span>`).join('<br>'); 
-        document.getElementById("confirmPopup").style.display = "flex"; 
-        
-        document.getElementById("finalSubmitBtn").onclick = () => { 
-            document.getElementById("confirmPopup").style.display = "none"; 
-            executeFinalSubmit(mode, currentName, currentItems); 
-        }; 
-    }
-    
-    async function executeFinalSubmit(mode, name, items) { 
-        document.getElementById("loaderOverlay").style.display = "flex";
-        
-        try { 
-            const currentDateStr = new Date().toISOString().split('T')[0]; 
-            
-            const payload = items.map(it => ({
-                user: name,
-                item: it.item,
-                in: mode === 'in' ? it.qty : null,
-                out: mode === 'out' ? it.qty : null,
-                date: currentDateStr,
-                note: it.desc || null
-            }));
 
-            const { data, error } = await supabaseClient
-                .from('inventory')
-                .insert(payload);
-
-            if (error) throw error;
-
-            showSuccessPopup(mode, items);
-            
-            const savedName = document.getElementById("name").value;
-            document.getElementById("myForm").reset(); 
-            document.getElementById("name").value = savedName;
-            
-            const container = document.getElementById("itemContainer"); 
-            while(container.children.length > 1) container.removeChild(container.lastChild); 
-            document.getElementById("addRow").style.visibility = "visible"; 
-            
-            fetchDataAndUpdateUI();
-
-        } catch (e) { 
-            console.error("Supabase Insert Error:", e);
-            showToast("❌ Insert Failed"); 
-        } finally { 
-            document.getElementById("loaderOverlay").style.display = "none"; 
-        } 
+        const displayFieldName = fieldName === 'log' ? 'INVENTORY' : fieldName.toUpperCase();
+        showToast("Tersimpan", `Akses modul ${displayFieldName} untuk ${nama} berhasil diperbarui.`, "success");
+      } catch (err) {
+        console.error("Auto save access error:", err);
+        showToast("Gagal Update", err.message || "Gagal memperbarui hak akses ke Supabase.", "error");
+      }
     }
 
-    function checkPassword() { if (document.getElementById("adminPass").value === "azza") { document.getElementById("passPopup").style.display = "none"; document.getElementById("adminPass").value = ""; if (passAction === "in") executeFinalSubmit(currentMode, currentName, currentItems); else if (passAction === "ga") updateGAUI(true); } else showToast("❌ Salah!"); }
-    function showToast(m) { const t = document.getElementById("popupToast"); t.textContent = m; t.style.display = "block"; setTimeout(() => t.style.display="none", 2500); }
-    function showSuccessPopup(m, its) { document.getElementById("successMode").textContent = m.toUpperCase(); document.getElementById("successItems").innerHTML = its.map(i => `• ${i.item}: <span style="color:#ef4444;">${i.qty}</span>`).join('<br>'); document.getElementById("successPopup").style.display = "flex"; }
-    function closeSuccessPopup() { document.getElementById("successPopup").style.display = "none"; }
-    function closeConfirmPopup() { document.getElementById("confirmPopup").style.display = "none"; }
-    function closePassPopup() { document.getElementById("passPopup").style.display = "none"; }
-
-    function toggleHistoryPopup(e) { e.stopPropagation(); const p = document.getElementById("historyPopup"); if (p.style.display === "block") { p.style.display = "none"; resetHistoryUI(); } else { p.style.display = "block"; renderHistory(lastTransactions); } }
-    function toggleHistorySearch(e) { e.stopPropagation(); const title = document.getElementById("historyTitle"); const input = document.getElementById("historySearchInput"); if (input.style.display === "block") { resetHistoryUI(); } else { title.style.display = "none"; input.style.display = "block"; input.focus(); } }
-    function resetHistoryUI() { document.getElementById("historyTitle").style.display = "block"; const input = document.getElementById("historySearchInput"); input.style.display = "none"; input.value = ""; renderHistory(lastTransactions); }
-    function filterHistory() { const val = document.getElementById("historySearchInput").value.toLowerCase(); const filtered = lastTransactions.filter(t => t[0].toLowerCase().includes(val) || t[1].toLowerCase().includes(val) || t[2].toLowerCase().includes(val) || t[3].toLowerCase().includes(val)); renderHistory(filtered); }
-
-    function renderHistory(data) {
-        document.getElementById("historyList").innerHTML = data.map((t, index) => `
-            <div class="history-item" onclick="const det = document.getElementById('det-${index}'); det.style.display = det.style.display === 'block' ? 'none' : 'block';">
-                <div style="font-size:0.85rem; display: flex; justify-content: space-between; align-items: center;">
-                    <span><b>${t[0]}</b> <span style="color:${t[1]==='in'?'#10b981':'#ef4444'}">${t[1].toUpperCase()}</span></span>
-                    <b>${t[2]}</b>
-                </div>
-                <div id="det-${index}" class="history-detail">
-                    <div style="margin-top: 1px; padding-top: 1px;">
-                        <b> Qty: ${t[3]}<br>
-                        <b> Date: ${t[4]}<br>
-                        <b> Notes: ${t[5] || '-'}
-                    </div>
-                </div>
-            </div>
-        `).join('');
+    function filterUsers() {
+      const q = document.getElementById("searchInput").value.toLowerCase();
+      const filtered = allUsers.filter(u => 
+        (u.nama && u.nama.toLowerCase().includes(q)) || 
+        (u.nik && u.nik.toLowerCase().includes(q))
+      );
+      renderUsers(filtered);
     }
 
-    document.getElementById("addRow").onclick = () => { 
-        const container = document.getElementById("itemContainer"); 
-        const btnAdd = document.getElementById("addRow"); 
-        if (container.children.length < 5) { 
-            const clone = container.children[0].cloneNode(true); 
-            clone.querySelectorAll("input, textarea").forEach(i => i.value = ""); 
-            
-            const qtyInp = clone.querySelector("input.qty");
-            if (qtyInp) qtyInp.onkeydown = preventNonNumeric;
+    function showToast(title, message, type = 'success') {
+      const toast = document.getElementById("toast");
+      const toastIcon = document.getElementById("toast-icon");
+      const toastTitle = document.getElementById("toast-title");
+      const toastMsg = document.getElementById("toast-msg");
 
-            clone.querySelector(".stock-overlay").style.display = "none"; 
-            clone.querySelector(".autocomplete-list").style.display = "none"; 
-            const tx = clone.querySelector("textarea.desc"); 
-            tx.onmousedown = (e) => startLongPress(e, tx); 
-            tx.onmouseup = cancelLongPress; 
-            tx.onmouseleave = cancelLongPress; 
-            tx.ontouchstart = (e) => startLongPress(e, tx); 
-            tx.ontouchend = cancelLongPress; 
-            container.appendChild(clone); 
-            initAutocomplete(); 
-            if (container.children.length === 5) btnAdd.style.visibility = "hidden"; 
-        } 
-    };
-    
-    document.addEventListener("click", e => { 
-        if (e.target.classList.contains("delete-row")) { 
-            e.target.closest(".item-row").remove(); 
-            if (document.getElementById("itemContainer").children.length < 5) { 
-                document.getElementById("addRow").style.visibility = "visible"; 
-            } 
-        } 
-        if (!e.target.closest(".autocomplete-list") && !e.target.closest("input") && !e.target.closest(".clear-btn")) document.querySelectorAll(".autocomplete-list").forEach(l => l.style.display = "none"); 
-        if (!e.target.closest("#myDropdown") && !e.target.closest("#hamburgerBtn")) document.getElementById("myDropdown").style.display = "none"; 
-        if (!e.target.closest("#historyPopup") && !e.target.closest("#btnHistoryGA")) { document.getElementById("historyPopup").style.display = "none"; resetHistoryUI(); }
-    });
+      if (type === 'success') {
+        toast.className = "fixed top-5 right-5 z-[100] transform transition-all duration-300 flex items-center gap-3 px-4 py-3 rounded-2xl shadow-xl border border-[#e6f4ea] dark:border-[#137333]/40 bg-white dark:bg-[#2d2e30] text-[#137333] dark:text-[#81c995] opacity-100 translate-y-0";
+        toastIcon.className = "p-1.5 rounded-xl bg-[#e6f4ea] dark:bg-[#137333]/30 text-[#137333] dark:text-[#81c995] shrink-0";
+        toastIcon.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>`;
+      } else {
+        toast.className = "fixed top-5 right-5 z-[100] transform transition-all duration-300 flex items-center gap-3 px-4 py-3 rounded-2xl shadow-xl border border-[#fce8e6] dark:border-[#c5221f]/40 bg-white dark:bg-[#2d2e30] text-[#c5221f] dark:text-[#f28b82] opacity-100 translate-y-0";
+        toastIcon.className = "p-1.5 rounded-xl bg-[#fce8e6] dark:bg-[#c5221f]/30 text-[#c5221f] dark:text-[#f28b82] shrink-0";
+        toastIcon.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>`;
+      }
 
-    document.getElementById("btnIn").onclick = () => handleSubmit("in");
-    document.getElementById("btnOut").onclick = () => handleSubmit("out");
-    
-    window.onload = function() {
-        fetchDataAndUpdateUI();
+      toastTitle.textContent = title;
+      toastMsg.textContent = message;
 
-        if (userData) {
-            try {
-                if (userData.nama) {
-                    const nameInput = document.getElementById("name");
-                    nameInput.value = userData.nama;
-                    nameInput.dispatchEvent(new Event('input'));
-                }
-                
-                if (userData.akses && userData.akses.accesControl) {
-                    const nilaiAkses = userData.akses.accesControl.toString().toUpperCase().trim();
-                    if (nilaiAkses === "ACCESS CONTROL" || nilaiAkses === "YA" || nilaiAkses === "TRUE") {
-                        updateGAUI(true);
-                        showToast("🔓 GA Mode Aktif Otomatis (Access Control)");
-                    }
-                }
-            } catch (e) {
-                console.error("Gagal membaca session integrasi SOT:", e);
-            }
-        }
-    };
-</script>
+      setTimeout(() => {
+        toast.classList.remove("opacity-100", "translate-y-0");
+        toast.classList.add("opacity-0", "translate-y-[-20px]", "pointer-events-none");
+      }, 3000);
+    }
+
+    fetchUsers();
+  </script>
 </body>
 </html>
